@@ -1,0 +1,1942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>La Cuisine de Chef Gaston</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gui: #c6c6c6; --gui-ink: #3f3f3f; --gui-lt: #ffffff; --gui-dk: #555555;
+  --slot: #8b8b8b; --gold: #ffd84a; --ok: #3d8a3d; --bad: #9c3a32;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1b1b; color: #fff;
+  font-family: 'Pixelify Sans', 'Courier New', monospace; -webkit-user-select: none; user-select: none; touch-action: none; }
+canvas#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+button { font-family: inherit; }
+
+/* ── Minecraft-style controls ── */
+.mc-btn { font-size: 1.05rem; color: #fff; text-shadow: 2px 2px 0 #3a3a3a; background: #727272; border: 2px solid #000;
+  box-shadow: inset 2px 2px 0 #a9a9a9, inset -2px -3px 0 #4b4b4b; padding: 10px 18px; min-height: 44px; cursor: pointer; letter-spacing: .02em; }
+.mc-btn:hover:not(:disabled), .mc-btn:focus-visible { background: #7b84b9; box-shadow: inset 2px 2px 0 #b9c0ee, inset -2px -3px 0 #4d5585; outline: none; }
+.mc-btn:disabled { color: #9a9a9a; background: #333; box-shadow: none; cursor: default; }
+.mc-btn.big { font-size: 1.3rem; padding: 12px 30px; min-width: 260px; }
+.mc-btn.small { font-size: .9rem; padding: 6px 12px; min-height: 36px; }
+.mc-btn.on { background: #4f8a3f; box-shadow: inset 2px 2px 0 #8ccc72, inset -2px -3px 0 #2f5a24; }
+
+/* ── Screens ── */
+.screen { position: fixed; inset: 0; display: none; overflow-y: auto; z-index: 20; padding: 28px 16px 40px; flex-direction: column; align-items: center; touch-action: pan-y; }
+.screen.on { display: flex; }
+#sTitle { background: linear-gradient(rgba(0,0,0,.10), rgba(0,0,0,.55) 45%, rgba(0,0,0,.7)); }
+.logo-wrap { position: relative; margin: 10px 0 6px; text-align: center; }
+.logo { font-size: clamp(44px, 10vw, 104px); font-weight: 700; line-height: 1; color: #d8d8d8; letter-spacing: .04em;
+  text-shadow: 0 4px 0 #8a8a8a, 0 8px 0 #4a4a4a, 0 12px 18px rgba(0,0,0,.6); }
+.logo-sub { font-size: clamp(14px, 2.6vw, 22px); color: #f1d9a6; margin-top: 18px; letter-spacing: .25em; text-shadow: 2px 2px 0 #3a2a10; }
+.splash { position: absolute; right: -14px; bottom: -6px; color: #ffff3c; font-size: clamp(13px, 2.4vw, 20px); text-shadow: 2px 2px 0 #3f3f00;
+  transform: rotate(-14deg); animation: splash .6s ease-in-out infinite alternate; white-space: nowrap; }
+@keyframes splash { to { transform: rotate(-14deg) scale(1.08); } }
+
+.panel { width: 100%; max-width: 860px; background: rgba(0,0,0,.62); border: 2px solid #000; box-shadow: inset 0 0 0 2px #5d5d5d; padding: 18px 20px; margin-top: 18px; }
+.panel h3 { margin: 0 0 12px; font-size: 1.05rem; color: #ffe08a; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.ticks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
+.tick { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 4px 0; font-size: .98rem; color: #e8e8e8; }
+.tick input { position: absolute; opacity: 0; pointer-events: none; }
+.tick .box { flex: 0 0 20px; height: 20px; margin-top: 1px; background: #8b8b8b; border: 2px solid; border-color: #373737 #fff #fff #373737; display: grid; place-items: center; }
+.tick input:checked + .box::after { content: ''; width: 10px; height: 10px; background: #5fd35f; box-shadow: 0 0 0 2px #1f4f1f; }
+.tick input:focus-visible + .box { outline: 2px solid #fff; }
+.lvhead { grid-column: 1 / -1; color: #ffe08a; font-weight: 600; letter-spacing: .06em; margin: 10px 0 2px; border-bottom: 2px solid #5d5d5d; padding-bottom: 4px; }
+.lvhead span { color: #9f9f9f; font-weight: 400; font-size: .85rem; letter-spacing: 0; }
+.tick .ch { display: block; font-size: .78rem; color: #9f9f9f; }
+.status { margin-top: 14px; color: #bde6a8; font-size: .92rem; min-height: 1.2em; }
+.status.warn { color: #ffb36b; }
+.start-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+.start-row .mc-btn.big { min-width: 300px; }
+.howto { text-align: left; background: rgba(0,0,0,.35); border: 2px solid #000; box-shadow: inset 0 0 0 2px #5d5d5d; padding: 12px 18px 6px; margin: 6px auto 4px; max-width: 560px; }
+.howto h4 { margin: 0 0 6px; color: #ffe08a; letter-spacing: .08em; font-weight: 600; }
+.howto ol { margin: 0; padding-left: 22px; }
+.howto li { font-size: 1.02rem; line-height: 1.55; color: #f0e6d2; margin-bottom: 6px; }
+.note-about { margin-top: 12px; font-size: .98rem; line-height: 1.5; color: #3f3f3f; }
+.fact { border-left: 4px solid #ffd84a; padding: 8px 12px; margin-bottom: 18px; color: #f0e6d2; line-height: 1.55; }
+.fact b { color: #ffe08a; }
+#say { position: absolute; transform: translate(-50%, -100%); background: #f3e4bf; color: #3a2a12; border: 2px solid #000; box-shadow: inset 0 0 0 2px #fff6dc; padding: 5px 10px 6px; text-align: center; white-space: nowrap; display: none; }
+#say::after { content: ''; position: absolute; left: 50%; bottom: -9px; margin-left: -7px; border: 7px solid transparent; border-top-color: #000; border-bottom: 0; }
+#say .l { font-size: 1.05rem; font-weight: 600; }
+#say .e { font-size: .82rem; color: #6a5536; }
+.controls-line { margin-top: 18px; color: #cfcfcf; font-size: .9rem; text-align: center; line-height: 1.7; }
+kbd { display: inline-block; background: #8b8b8b; color: #222; border: 2px solid; border-color: #fff #373737 #373737 #fff; padding: 0 6px; font-family: inherit; font-size: .82rem; }
+.credit { margin-top: 18px; font-size: .78rem; color: #a8a8a8; text-align: center; max-width: 700px; line-height: 1.5; }
+
+#sStory, #sPause, #sWin { background: rgba(10,6,4,.72); justify-content: center; }
+#sWin { justify-content: flex-start; }
+.story { max-width: 640px; text-align: center; }
+.story h2 { font-size: clamp(28px, 6vw, 46px); margin: 0 0 6px; color: #ffcf6b; text-shadow: 3px 3px 0 #4a2a00; }
+.story .when { color: #c9b28a; letter-spacing: .3em; margin-bottom: 18px; }
+.story p { font-size: 1.12rem; line-height: 1.65; color: #f0e6d2; margin: 0 0 14px; }
+.story .mc-btn { margin-top: 12px; }
+
+/* ── HUD ── */
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; display: none; }
+#hud.on { display: block; }
+#cross { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%,-50%); mix-blend-mode: difference; }
+#cross::before, #cross::after { content: ''; position: absolute; background: #fff; }
+#cross::before { left: 10px; top: 0; width: 2px; height: 22px; }
+#cross::after { top: 10px; left: 0; width: 22px; height: 2px; }
+#roomBox { position: absolute; left: 12px; top: 12px; background: rgba(0,0,0,.5); padding: 8px 12px; max-width: calc(100vw - 120px); }
+#roomName { font-size: 1.05rem; color: #ffe08a; text-shadow: 2px 2px 0 #000; }
+#roomGoal { font-size: .85rem; color: #ddd; margin-top: 3px; }
+#roomHint { font-size: .8rem; color: #ffe9a8; margin-top: 3px; }
+.ach-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
+.ach { display: flex; gap: 8px; align-items: flex-start; font-size: .92rem; color: #e8e8e8; }
+.ach .ic { flex: 0 0 22px; height: 22px; display: grid; place-items: center; background: #3a3a3a; border: 2px solid #000; font-size: .8rem; }
+.ach.got .ic { background: #c79a1e; color: #fff; }
+.ach .ds { display: block; font-size: .78rem; color: #9f9f9f; }
+.ach-lv { grid-column: 1 / -1; color: #ffe08a; font-size: .85rem; letter-spacing: .08em; margin-top: 8px; }
+@media (max-width: 640px) { .ach-list { grid-template-columns: 1fr; } }
+#scoreBox { position: absolute; right: 12px; top: 12px; background: rgba(0,0,0,.5); padding: 8px 12px; font-size: .95rem; text-shadow: 2px 2px 0 #000; }
+#scoreBox b { color: #7dff7d; }
+#hotbar { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); display: flex; background: rgba(0,0,0,.35); border: 2px solid #000; box-shadow: inset 0 0 0 2px #8b8b8b; }
+.hslot { position: relative; width: 52px; height: 52px; border: 2px solid; border-color: #373737 #8b8b8b #8b8b8b #373737; background: rgba(139,139,139,.45); display: grid; place-items: center; }
+.hslot img { width: 34px; height: 34px; image-rendering: pixelated; opacity: .18; }
+.hslot.has img { opacity: 1; }
+.hslot .cnt { position: absolute; right: 3px; bottom: 0; font-size: 1rem; text-shadow: 2px 2px 0 #3f3f3f; }
+.hslot .rn { position: absolute; left: 4px; top: 1px; font-size: .62rem; color: #ddd; text-shadow: 1px 1px 0 #000; }
+.hslot.sel { box-shadow: 0 0 0 3px #fff, 0 0 0 5px #000; z-index: 1; }
+.hslot.full { background: rgba(80,160,80,.45); }
+#actionbar { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); font-size: 1.08rem; text-shadow: 2px 2px 0 #3f3f3f; white-space: nowrap; max-width: 96vw; overflow: hidden; text-overflow: ellipsis; }
+#toast { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); font-size: 1.25rem; color: #fff; text-shadow: 2px 2px 0 #3f3f3f; text-align: center; opacity: 0; transition: opacity .4s; width: 92vw; }
+#toast.show { opacity: 1; }
+#achPop { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); background: rgba(40,28,4,.85); border: 2px solid #000; box-shadow: inset 0 0 0 2px #c79a1e; padding: 8px 16px; text-align: center; color: #ffe08a; opacity: 0; transition: opacity .4s; max-width: 92vw; }
+#achPop span { color: #f0e6d2; font-size: .9rem; }
+#achPop.show { opacity: 1; }
+#toast .gold { color: #ffd84a; }
+#splashR { position: absolute; left: 0; right: 0; top: 30%; text-align: center; opacity: 0; transition: opacity .6s; }
+#splashR.show { opacity: 1; }
+#splashR .n { font-size: 1.1rem; color: #ddd; letter-spacing: .4em; text-shadow: 2px 2px 0 #000; }
+#splashR .t { font-size: clamp(34px, 7vw, 64px); color: #fff; text-shadow: 4px 4px 0 #3a3a3a; }
+#splashR .l { font-size: 1.4rem; color: #ffe08a; font-style: italic; text-shadow: 2px 2px 0 #000; }
+#splashR .i { font-size: 1rem; color: #eee; margin-top: 10px; text-shadow: 2px 2px 0 #000; padding: 0 16px; }
+#hurt { position: absolute; inset: 0; background: radial-gradient(transparent 55%, rgba(120,40,0,.35)); opacity: 0; transition: opacity 1s; }
+
+/* ── Touch controls ── */
+#touch { display: none; position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+body.touch #touch.on { display: block; }
+#joy { position: absolute; left: 22px; bottom: 90px; width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.35); pointer-events: auto; }
+#joyKnob { position: absolute; left: 40px; top: 40px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,.45); }
+.tbtn { position: absolute; pointer-events: auto; width: 74px; height: 74px; font-size: 1rem; }
+#tUse { right: 22px; bottom: 150px; }
+#tJump { right: 104px; bottom: 90px; }
+#tPause { position: absolute; right: 12px; top: 62px; pointer-events: auto; }
+
+/* ── Question GUI (inventory-style panel) ── */
+#sQ { background: rgba(0,0,0,.55); justify-content: flex-start; }
+.gui { width: 100%; max-width: 780px; margin: auto 0; background: var(--gui); color: var(--gui-ink); border: 3px solid; border-color: var(--gui-lt) var(--gui-dk) var(--gui-dk) var(--gui-lt); outline: 3px solid #000; padding: 18px 20px 20px; }
+.q-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: .95rem; color: #555; border-bottom: 2px solid #999; padding-bottom: 8px; margin-bottom: 12px; }
+.q-head .nm { color: #3f3f3f; font-weight: 600; }
+.q-task { font-size: 1.05rem; margin-bottom: 10px; }
+.q-latin { background: #f3e4bf; color: #3a2a12; border: 2px solid; border-color: #7a6440 #fff6dc #fff6dc #7a6440; padding: 14px 16px; font-size: clamp(1.25rem, 4vw, 1.7rem); line-height: 1.5; text-align: center; font-weight: 600; }
+.q-latin .gap { display: inline-block; min-width: 4.5em; border-bottom: 3px solid #3a2a12; color: #2d6a2d; }
+.q-latin .tgt { background: #ffd84a; padding: 0 4px; box-shadow: 0 0 0 2px #8a6a00; }
+.q-en { text-align: center; color: #555; margin-top: 8px; font-size: 1.05rem; }
+.q-en.big { background: #f3e4bf; color: #3a2a12; padding: 12px; font-size: 1.3rem; border: 2px solid; border-color: #7a6440 #fff6dc #fff6dc #7a6440; }
+.q-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 12px 0 10px; flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; align-items: center; font-size: .85rem; color: #555; }
+.dot { width: 16px; height: 16px; background: var(--slot); border: 2px solid; border-color: #373737 #fff #fff #373737; }
+.dot.ok { background: #5fd35f; } .dot.no { background: #d8574a; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.choice { text-align: left; display: flex; gap: 10px; align-items: center; font-size: 1.05rem; padding: 10px 12px; }
+.choice .k { display: inline-grid; place-items: center; min-width: 24px; height: 24px; background: rgba(0,0,0,.3); font-size: .85rem; }
+.choice.ok { background: var(--ok); box-shadow: inset 2px 2px 0 #7fd07f, inset -2px -3px 0 #1f501f; }
+.choice.no { background: var(--bad); box-shadow: inset 2px 2px 0 #e08a80, inset -2px -3px 0 #5a1d18; }
+.choice.ok:disabled, .choice.no:disabled { color: #fff; }
+.choice.ok:disabled { background: var(--ok); box-shadow: inset 2px 2px 0 #7fd07f, inset -2px -3px 0 #1f501f; }
+.choice.no:disabled { background: var(--bad); box-shadow: inset 2px 2px 0 #e08a80, inset -2px -3px 0 #5a1d18; }
+.choice.lat span:last-child { font-weight: 600; }
+.slots { min-height: 62px; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; background: var(--slot); border: 2px solid; border-color: #373737 #fff #fff #373737; align-items: center; }
+.slots .ph { color: #e6e6e6; font-size: .92rem; padding: 0 4px; }
+.bank { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tok { font-size: 1.1rem; font-weight: 600; padding: 8px 12px; min-height: 42px; }
+.tok.used { visibility: hidden; }
+.row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.feed { margin-top: 12px; padding: 10px 12px; font-size: 1.02rem; display: none; border: 2px solid; }
+.feed.show { display: block; }
+.feed.ok { background: #d3ecc9; color: #1f4f1f; border-color: #3d8a3d; }
+.feed.no { background: #f1d0c9; color: #6a1f18; border-color: #9c3a32; }
+.feed em { font-style: normal; font-weight: 600; }
+.gtable { display: none; margin-top: 10px; background: #e2e2e2; border: 2px solid; border-color: #373737 #fff #fff #373737; padding: 10px; overflow-x: auto; }
+.gtable.show { display: block; }
+.gtable strong { display: block; margin-bottom: 6px; }
+.gtable table { border-collapse: collapse; font-size: .92rem; }
+.gtable th, .gtable td { border: 1px solid #9a9a9a; padding: 3px 8px; text-align: left; white-space: nowrap; }
+.gtable th { background: #cfcfcf; }
+.gtable .note { margin-top: 6px; font-size: .85rem; color: #555; }
+.q-done { display: none; justify-content: flex-end; margin-top: 14px; }
+.q-done.show { display: flex; }
+
+/* ── Victory ── */
+.win h2 { font-size: clamp(40px, 9vw, 80px); margin: 10px 0 0; color: #ffd84a; text-shadow: 4px 4px 0 #5a3a00; text-align: center; }
+.win .sub { text-align: center; color: #f0e6d2; font-size: 1.1rem; margin: 8px 0 0; }
+.win .score { text-align: center; font-size: 3rem; margin-top: 14px; color: #7dff7d; text-shadow: 3px 3px 0 #1a3a1a; }
+.win .score small { display: block; font-size: .95rem; color: #ccc; text-shadow: none; }
+.rev { width: 100%; border-collapse: collapse; }
+.rev td { padding: 9px 6px; border-bottom: 1px solid rgba(255,255,255,.12); vertical-align: top; }
+.rev .n { color: #ffe08a; width: 28px; }
+.rev .q { color: #fff; font-weight: 600; }
+.rev .a { color: #c9c9c9; font-size: .92rem; margin-top: 2px; }
+.rev .m { width: 28px; text-align: center; font-size: 1.2rem; }
+.rev .m.ok { color: #7dff7d; } .rev .m.no { color: #ff8a7a; }
+.panel ul { margin: 0; padding-left: 20px; line-height: 1.7; }
+.panel ul .ch { color: #9f9f9f; font-size: .85rem; }
+.end-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 22px; }
+
+#loading { position: fixed; inset: 0; z-index: 50; background: #2b1e14; display: none; place-items: center; font-size: 1.3rem; color: #eee; text-shadow: 2px 2px 0 #000; }
+#loading.on { display: grid; }
+#noGL { position: fixed; inset: 0; display: none; place-items: center; padding: 20px; text-align: center; background: #222; z-index: 99; }
+
+@media (max-width: 640px) {
+  .ticks { grid-template-columns: 1fr; }
+  .choices { grid-template-columns: 1fr; }
+  .hslot { width: 44px; height: 44px; }
+  .hslot img { width: 28px; height: 28px; }
+  #actionbar { bottom: 70px; font-size: .95rem; }
+  .panel { padding: 14px; }
+  .gui { padding: 14px; }
+  .mc-btn.big { min-width: 0; width: 100%; }
+}
+/* ── French kitchen extras ── */
+#sTitle { background: linear-gradient(rgba(0,20,60,.15), rgba(0,0,0,.55) 45%, rgba(0,0,0,.72)); }
+.logo { color: #fff; text-shadow: 0 4px 0 #2b4f9a, 0 8px 0 #c8323a, 0 12px 18px rgba(0,0,0,.6); }
+.logo-sub { color: #ffe6b0; }
+.flagbar { display: flex; height: 8px; width: 220px; margin: 14px auto 0; }
+.flagbar span { flex: 1; } .flagbar span:nth-child(1) { background: #0055a4; } .flagbar span:nth-child(2) { background: #fff; } .flagbar span:nth-child(3) { background: #ef4135; }
+.ticks .lvhead { margin-top: 6px; }
+.q-fr { background: #fbf3e2; color: #2a2238; border: 2px solid; border-color: #7a6440 #fff6dc #fff6dc #7a6440; padding: 14px 16px; font-size: clamp(1.25rem, 4vw, 1.7rem); line-height: 1.5; text-align: center; font-weight: 600; }
+.q-fr.en { background: #e6eefb; color: #1d2a48; border-color: #4a5a80 #f4f8ff #f4f8ff #4a5a80; }
+.q-fr .subj { color: #1f4f9a; } .q-fr .inf { color: #a8242c; }
+.q-tense { display: inline-block; background: #3f3f3f; color: #ffe08a; padding: 0 8px; font-size: .9rem; }
+.q-who { text-align: center; margin-top: 6px; color: #3f3f3f; font-size: 1.05rem; }
+.q-ic { width: 22px; height: 22px; image-rendering: pixelated; vertical-align: -5px; }
+.choice.fr span:last-child { font-weight: 600; }
+.typed { display: flex; gap: 8px; margin-top: 4px; }
+.typed input { flex: 1; min-width: 0; font-family: inherit; font-size: 1.35rem; padding: 8px 12px; background: #fff; color: #222; border: 2px solid; border-color: #373737 #fff #fff #373737; outline: none; -webkit-user-select: text; user-select: text; }
+.typed input:focus { box-shadow: 0 0 0 2px #7b84b9; }
+.typed input:disabled { background: #e6e6e6; }
+.accents { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.accents .acc { min-width: 44px; font-size: 1.15rem; padding: 4px 8px; }
+.stars { text-align: center; font-size: clamp(44px, 9vw, 72px); letter-spacing: .1em; margin-top: 6px; }
+.star { color: #4a4a4a; text-shadow: 3px 3px 0 #000; }
+.star.on { color: #ffd84a; text-shadow: 3px 3px 0 #7a5200; }
+.win .sub { max-width: 640px; font-style: italic; line-height: 1.5; }
+.rev .m.half { color: #ffd84a; }
+.panel .a { color: #c9c9c9; font-size: .9rem; }
+.panel li em { color: #ffe08a; font-style: normal; }
+.howto li b { color: #ffe08a; }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+
+<div id="hud">
+  <div id="cross"></div>
+  <div id="roomBox"><div id="roomName"></div><div id="roomGoal"></div><div id="roomHint"></div></div>
+  <div id="scoreBox">Right first time: <b id="scoreN">0</b> / 30</div>
+  <div id="say"><div class="l" id="sayL"></div><div class="e" id="sayE"></div></div>
+  <div id="splashR"><div class="n" id="spN"></div><div class="t" id="spT"></div><div class="l" id="spL"></div><div class="i" id="spI"></div></div>
+  <div id="toast"></div>
+  <div id="actionbar"></div>
+  <div id="hotbar"></div>
+</div>
+
+<div id="touch">
+  <div id="joy"><div id="joyKnob"></div></div>
+  <button class="mc-btn tbtn" id="tUse">USE</button>
+  <button class="mc-btn tbtn" id="tJump">JUMP</button>
+  <button class="mc-btn small" id="tPause">❚❚</button>
+</div>
+
+<!-- TITLE / SETUP -->
+<div class="screen on" id="sTitle">
+  <div class="logo-wrap">
+    <div class="logo">LA CUISINE</div>
+    <div class="splash" id="splashTxt">Oh là là!</div>
+  </div>
+  <div class="logo-sub">DE CHEF GASTON · A FRENCH VERB ESCAPE GAME</div>
+  <div class="flagbar"><span></span><span></span><span></span></div>
+  <div class="panel">
+    <h3>Les verbes: which verbs?</h3>
+    <div class="presets" id="presets"></div>
+    <div class="ticks" id="ticks"></div>
+  </div>
+  <div class="panel">
+    <h3>Les temps: which tenses?</h3>
+    <div class="ticks" id="tenses"></div>
+  </div>
+  <div class="panel">
+    <h3>Question types</h3>
+    <div class="ticks" id="qtypes"></div>
+    <div class="status" id="setupStatus"></div>
+  </div>
+  <div class="start-row">
+    <button class="mc-btn big" id="startBtn">Entrer dans la cuisine ▶</button>
+  </div>
+  <div class="controls-line">
+    <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk · mouse: look · <kbd>Space</kbd> jump · <kbd>Shift</kbd> run · <kbd>E</kbd> or click: use · <kbd>Esc</kbd> pause<br>
+    On a phone or tablet: move with the left stick, drag to look, and tap USE.
+  </div>
+  <div class="credit">Three courses, ten ingredients each: 30 verb questions in all.<br>Every verb, ending and translation comes from the French department’s verb sheets: the verb ladder, Verbs basic, and the Present, Perfect, Perfect être and Near future sheets.</div>
+</div>
+
+<!-- STORY -->
+<div class="screen" id="sStory">
+  <div class="story">
+    <h2>Restaurant Le Gros Bouillon</h2>
+    <div class="when">PARIS · CE SOIR · 19H00</div>
+    <p>You are the new apprentice in the kitchen of <b>Chef Gaston Grosbouillon</b>. Tonight the most feared food critic in France, <b>Madame Lagrange</b>, is coming to dinner.</p>
+    <p>There is one small problem. Last week somebody ate all the butter, so Chef Gaston has locked every ingredient in his enchanted fridges, jars and cupboards. They open only for <b>perfect French verbs</b>. He says this is completely normal in France.</p>
+    <p>(It was Chef Gaston who ate the butter.)</p>
+    <div class="howto">
+      <h4>HOW TO COOK DINNER</h4>
+      <ol>
+        <li>There are <b>three kitchens</b>: l’entrée, le plat principal and le dessert. Each needs <b>10 ingredients</b>.</li>
+        <li><b>✦ Golden sparkles</b> mark a locked fridge, jar, sack or drawer. Walk up and press <b>E</b> (on a tablet, tap <b>USE</b>), then answer the verb question.</li>
+        <li>For typed answers, use the <b>accent buttons</b> for é, è, à, ç and the rest.</li>
+        <li>With all ten ingredients, cook the dish on the <b>middle counter</b>. The door to the next kitchen opens.</li>
+        <li>Serve all three courses to Madame Lagrange in the dining room. Her stars depend on your verbs. And mind the snail.</li>
+      </ol>
+    </div>
+    <button class="mc-btn big" id="beginBtn">Allons-y! ▶</button>
+  </div>
+</div>
+
+<!-- PAUSE -->
+<div class="screen" id="sPause">
+  <div class="story">
+    <h2>Pause café</h2>
+    <p id="pauseInfo"></p>
+    <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+      <button class="mc-btn big" id="resumeBtn">Back to the kitchen</button>
+      <button class="mc-btn big" id="quitBtn">Quit to the menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUESTION -->
+<div class="screen" id="sQ"><div class="gui" id="qPanel"></div></div>
+
+<!-- VERDICT -->
+<div class="screen win" id="sWin">
+  <h2 id="winH"></h2>
+  <div class="stars" id="winStars"></div>
+  <div class="sub" id="winSub"></div>
+  <div class="score" id="winScore"></div>
+  <div class="panel" id="winBody"></div>
+  <div class="end-btns">
+    <button class="mc-btn big" id="againBtn">Cook again (new questions)</button>
+    <button class="mc-btn big" id="changeBtn">Change the verbs and tenses</button>
+  </div>
+</div>
+
+<div id="loading"></div>
+<div id="noGL">This game needs WebGL. Try a recent version of Chrome, Edge, Firefox or Safari.</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('cuisine.' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('cuisine.' + k, JSON.stringify(v)); } catch (e) {} },
+};
+const ROMAN = ['I', 'II', 'III', 'IV'];
+const SPLASHES = ['Oh là là!', 'Sacrebleu!', 'Now with extra butter!', 'Mind the snail!', 'Bon appétit!', 'Le frigo est fermé!', 'Zut alors!', 'Pas de panique!', '100% French!', 'Chef’s kiss!'];
+
+// ════════════════════════════════════════════════════════════════
+// THE MENU: three courses, ten ingredients each
+// store: which locked thing holds it. icon: how it looks in the hotbar.
+// ════════════════════════════════════════════════════════════════
+const COURSES = [
+  { name: 'L’entrée', dish: 'la salade niçoise', en: 'the salade niçoise', station: 'BOWL', stationName: 'le saladier (the salad bowl)', cook: 'Mix the salad',
+    wall: 'WALLB', intro: 'Ten ingredients for a salade niçoise are locked away. Every lock opens for one good French verb.',
+    done: '<span class="gold">La salade niçoise est prête!</span><br>The door to the main-course kitchen is open.',
+    items: [
+      ['des tomates', 'tomatoes', 'BASKET', 'tomato'], ['des œufs', 'eggs', 'FRIDGE', 'egg'], ['du thon', 'tuna', 'TIN', 'tin'], ['des olives noires', 'black olives', 'JAR', 'olive'],
+      ['des haricots verts', 'green beans', 'DRAWER', 'bean'], ['des pommes de terre', 'potatoes', 'SACK', 'potato'], ['des anchois', 'anchovies', 'TIN', 'fish'],
+      ['de la laitue', 'lettuce', 'CRATE', 'lettuce'], ['un oignon rouge', 'a red onion', 'BASKET', 'onion'], ['de l’huile d’olive', 'olive oil', 'CUPB', 'bottle']] },
+  { name: 'Le plat principal', dish: 'le cassoulet de canard', en: 'the duck cassoulet', station: 'POT', stationName: 'la cocotte (the cooking pot)', cook: 'Cook the cassoulet',
+    wall: 'WALLY', intro: 'A cassoulet takes hours to cook, and the critic is already hungry. Ten more ingredients. Vite!',
+    done: '<span class="gold">Le cassoulet est prêt!</span><br>The door to the pastry kitchen is open.',
+    items: [
+      ['des haricots blancs', 'white beans', 'SACK', 'beans'], ['du confit de canard', 'duck confit', 'JAR', 'duck'], ['des saucisses de Toulouse', 'Toulouse sausages', 'FRIDGE', 'sausage'],
+      ['de la poitrine de porc', 'pork belly', 'CRATE', 'meat'], ['des carottes', 'carrots', 'BASKET', 'carrot'], ['des oignons', 'onions', 'CRATE', 'onion2'],
+      ['de l’ail', 'garlic', 'DRAWER', 'garlic'], ['du thym', 'thyme', 'JAR', 'herb'], ['du bouillon', 'stock', 'CUPB', 'stock'], ['de la chapelure', 'breadcrumbs', 'TIN', 'crumbs']] },
+  { name: 'Le dessert', dish: 'les éclairs au chocolat', en: 'the chocolate éclairs', station: 'OVEN', stationName: 'le four (the oven)', cook: 'Bake the éclairs',
+    wall: 'WALLP', intro: 'Pastry is a science, says the pastry chef. Ten ingredients, weighed to the gram. Or roughly.',
+    done: '<span class="gold">Les éclairs sont prêts!</span><br>The door to the dining room is open. Serve the critic!',
+    items: [
+      ['de la farine', 'flour', 'SACK', 'flour'], ['du beurre', 'butter', 'FRIDGE', 'butter'], ['des œufs', 'eggs', 'BASKET', 'egg'], ['du lait', 'milk', 'BARREL', 'milk'],
+      ['du sucre', 'sugar', 'SACK', 'sugar'], ['du sel', 'salt', 'TIN', 'salt'], ['du chocolat noir', 'dark chocolate', 'CUPB', 'choc'],
+      ['de la crème', 'cream', 'FRIDGE', 'cream'], ['de la vanille', 'vanilla', 'JAR', 'vanilla'], ['de l’eau', 'water (from the tap, obviously)', 'SINK', 'water']] },
+];
+const STORE_NAME = { FRIDGE: 'le frigo (the fridge)', CUPB: 'le placard (the cupboard)', DRAWER: 'le tiroir (the drawer)', TIN: 'la boîte (the tin)', JAR: 'le bocal (the jar)',
+  BASKET: 'le panier (the basket)', SACK: 'le sac (the sack)', CRATE: 'la caisse (the crate)', BARREL: 'le bidon (the milk churn)', SINK: 'le robinet (the tap)' };
+const STORE_KIND = { FRIDGE: 'tall', CUPB: 'low', DRAWER: 'low', SINK: 'low', TIN: 'top', JAR: 'top', BASKET: 'top', SACK: 'floor', CRATE: 'floor', BARREL: 'floor' };
+const RIGHT = ['Magnifique!', 'Parfait!', 'Ooh là là, superbe!', 'Bravo, mon chef!', 'Excellent! The chef weeps with joy.', 'Délicieux!', 'C’est parfait. Like my soufflé.'];
+const WRONG = ['Sacrebleu!', 'Oh là là… non.', 'Quelle catastrophe!', 'Mon Dieu!', 'Zut alors!', 'Non, non, NON!', 'Pfff. Even the snail knows that.'];
+const GIVEUP = ['Bof. Take it anyway.', 'Oh là là. Here, take it before I cry.', 'Fine. The critic will never know.'];
+
+// ════════════════════════════════════════════════════════════════
+// INGREDIENT ICONS (little pixel drawings for the hotbar)
+// ════════════════════════════════════════════════════════════════
+const ICON_SPEC = {
+  tomato: [['c', 8, 9, 6, '#d8322a'], ['c', 6, 7, 2, '#f07a6a'], ['r', 6, 2, 4, 3, '#3f8f2f']],
+  egg: [['e', 8, 9, 5, 6, '#f4ead8'], ['e', 6, 7, 1.5, 2, '#ffffff']],
+  tin: [['r', 3, 4, 10, 10, '#9aa0a8'], ['r', 3, 6, 10, 5, '#2f6db0'], ['r', 3, 3, 10, 2, '#c8ccd2']],
+  olive: [['e', 6, 9, 3, 4, '#2a2a2e'], ['e', 11, 8, 3, 4, '#3a3a40'], ['r', 10, 3, 1, 3, '#4a6a2a']],
+  bean: [['r', 2, 6, 12, 2, '#4fa43a'], ['r', 3, 9, 11, 2, '#3f8f2f'], ['r', 2, 12, 12, 2, '#5ab446']],
+  potato: [['e', 8, 9, 6, 4, '#b98a52'], ['c', 6, 8, 0.8, '#7a5a30'], ['c', 10, 10, 0.8, '#7a5a30']],
+  fish: [['e', 7, 8, 5, 2.5, '#9ab0c0'], ['r', 11, 6, 3, 5, '#7a90a0'], ['c', 4, 7, 0.8, '#1a1a1a']],
+  lettuce: [['c', 8, 9, 6, '#6cc04a'], ['c', 8, 9, 3.5, '#a6e07a'], ['c', 8, 9, 1.5, '#d6f4b6']],
+  onion: [['c', 8, 10, 5, '#9a2a5a'], ['r', 7, 2, 2, 4, '#5a8a3a'], ['c', 7, 9, 1.5, '#c86a9a']],
+  onion2: [['c', 8, 10, 5, '#d6a95a'], ['r', 7, 2, 2, 4, '#7a8a3a'], ['c', 7, 9, 1.5, '#f0d090']],
+  bottle: [['r', 6, 6, 5, 9, '#7a9a2a'], ['r', 7, 2, 3, 4, '#5a7a1a'], ['r', 6, 9, 5, 3, '#e8d890']],
+  beans: [['r', 3, 5, 10, 10, '#c8b28a'], ['c', 6, 9, 1.2, '#f4f0e6'], ['c', 10, 11, 1.2, '#f4f0e6'], ['c', 8, 7, 1.2, '#f4f0e6']],
+  duck: [['e', 8, 10, 5, 4, '#a8682a'], ['c', 11, 6, 2.5, '#a8682a'], ['r', 13, 6, 2, 1, '#e8a830']],
+  sausage: [['r', 2, 6, 12, 4, '#a8402a'], ['c', 2, 8, 2, '#a8402a'], ['c', 14, 8, 2, '#a8402a'], ['r', 4, 7, 8, 1, '#c8604a']],
+  meat: [['e', 8, 9, 6, 4, '#e8a0a0'], ['r', 2, 7, 12, 1, '#fff0f0'], ['r', 2, 10, 12, 1, '#fff0f0']],
+  carrot: [['r', 4, 7, 9, 3, '#ec8a2a'], ['r', 12, 7, 2, 3, '#ec8a2a'], ['r', 2, 6, 3, 5, '#4f9a3a']],
+  garlic: [['c', 8, 10, 5, '#f2ece0'], ['r', 7, 3, 2, 3, '#e0d8c8'], ['r', 8, 6, 1, 8, '#d0c8b8']],
+  herb: [['r', 7, 3, 2, 11, '#3f7a2a'], ['c', 5, 6, 1.5, '#5aa046'], ['c', 10, 8, 1.5, '#5aa046'], ['c', 5, 11, 1.5, '#5aa046']],
+  stock: [['r', 4, 5, 8, 10, '#d8b24a'], ['r', 4, 3, 8, 2, '#a8a8a8'], ['r', 5, 8, 6, 3, '#f4e090']],
+  crumbs: [['r', 3, 4, 10, 10, '#c89a5a'], ['c', 6, 8, 1, '#e8c890'], ['c', 10, 10, 1, '#e8c890'], ['c', 8, 12, 1, '#e8c890']],
+  flour: [['r', 3, 4, 10, 11, '#f0ece2'], ['r', 3, 4, 10, 2, '#d8d0c0'], ['r', 5, 8, 6, 3, '#4a7ac0']],
+  butter: [['r', 2, 7, 12, 6, '#f6e07a'], ['r', 2, 7, 12, 2, '#fff2a8']],
+  milk: [['r', 5, 5, 6, 10, '#ffffff'], ['r', 6, 2, 4, 3, '#4a8ad0'], ['r', 5, 9, 6, 2, '#4a8ad0']],
+  sugar: [['r', 3, 4, 10, 11, '#f8f8f8'], ['r', 5, 7, 6, 4, '#d84a7a']],
+  salt: [['r', 4, 4, 8, 11, '#2a5ab0'], ['r', 4, 2, 8, 3, '#d8d8d8'], ['r', 5, 8, 6, 2, '#ffffff']],
+  choc: [['r', 2, 4, 12, 9, '#5a3218'], ['r', 2, 8, 12, 1, '#3a2010'], ['r', 7, 4, 1, 9, '#3a2010']],
+  cream: [['r', 4, 4, 8, 11, '#f8f4ec'], ['r', 4, 3, 8, 2, '#c8b8a0'], ['e', 8, 10, 3, 2, '#ece4d4']],
+  vanilla: [['r', 3, 7, 11, 2, '#3a2214'], ['r', 2, 10, 11, 2, '#4a2a18'], ['c', 13, 5, 2, '#f4f0e0']],
+  water: [['c', 8, 10, 4, '#4aa0e8'], ['r', 7, 3, 2, 5, '#4aa0e8'], ['c', 7, 9, 1.2, '#b8e0ff']],
+};
+function drawIcon(name, size) {
+  const c = document.createElement('canvas'); c.width = c.height = 16; const x = c.getContext('2d');
+  for (const s of ICON_SPEC[name] || []) {
+    x.fillStyle = s[s.length - 1]; x.beginPath();
+    if (s[0] === 'r') x.fillRect(s[1], s[2], s[3], s[4]);
+    else if (s[0] === 'c') { x.arc(s[1], s[2], s[3], 0, 7); x.fill(); }
+    else { x.ellipse(s[1], s[2], s[3], s[4], 0, 0, 7); x.fill(); }
+  }
+  // pixelate: keep the drawing crisp at 16 × 16
+  return c.toDataURL();
+}
+const ICONS = {}; Object.keys(ICON_SPEC).forEach(k => ICONS[k] = drawIcon(k));
+
+// ════════════════════════════════════════════════════════════════
+// TEXTURES — 16×16 pixel tiles painted into one atlas
+// ════════════════════════════════════════════════════════════════
+let seed = 7;
+const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+const nz = (c, a) => { const v = (rnd() - 0.5) * a; return [c[0] + v, c[1] + v, c[2] + v]; };
+const mulc = (c, s) => [c[0] * s, c[1] * s, c[2] * s];
+const atlasCanvas = document.createElement('canvas');
+atlasCanvas.width = atlasCanvas.height = 256;
+const actx = atlasCanvas.getContext('2d');
+const atlasImg = actx.createImageData(256, 256);
+function paint(i, f) {
+  const ox = (i % 16) * 16, oy = Math.floor(i / 16) * 16;
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+    const c = f(x, y), p = ((oy + y) * 256 + ox + x) * 4;
+    atlasImg.data[p] = c[0]; atlasImg.data[p + 1] = c[1]; atlasImg.data[p + 2] = c[2]; atlasImg.data[p + 3] = c[3] === undefined ? 255 : c[3];
+  }
+}
+const tiles = (base, line) => (x, y) => (x % 8 === 0 || y % 8 === 0) ? nz(line, 8) : nz(base, 10);
+paint(0, (x, y) => ((Math.floor(x / 8) + Math.floor(y / 8)) % 2) ? nz([34, 32, 34], 10) : nz([232, 228, 220], 10));   // chequered floor
+paint(1, tiles([236, 240, 244], [176, 184, 196]));                     // white wall tiles
+paint(2, tiles([150, 196, 232], [96, 140, 186]));                       // blue tiles (l'entrée)
+paint(3, tiles([238, 204, 112], [184, 150, 70]));                       // yellow tiles (le plat)
+paint(4, tiles([244, 186, 204], [196, 130, 152]));                      // pink tiles (le dessert)
+paint(5, (x, y) => mulc(nz([200, 204, 212], 10), 0.9 + 0.1 * Math.sin(x * 0.9 + y * 0.2)));   // stainless steel
+paint(6, (x, y) => { if (y < 2) return nz([200, 204, 212], 8); if (x === 0 || x === 15 || y === 15) return nz([90, 62, 38], 8); return (x === 7 || x === 8) && y > 3 ? nz([110, 76, 46], 8) : nz([156, 112, 70], 14); });   // counter front
+paint(7, () => nz([238, 232, 220], 8));                                 // ceiling plaster
+paint(8, (x, y) => { const d = Math.hypot(x - 7.5, y - 7.5); return d < 5 ? [255, 240 - d * 6, 190 - d * 10] : nz([238, 232, 220], 8); });   // ceiling lamp
+paint(9, (x, y) => { const off = Math.floor(y / 4) % 2 ? 4 : 0; return (y % 4 === 3 || (x + off) % 8 === 7) ? nz([200, 190, 170], 8) : nz([168, 72, 52], 20); });   // brick
+paint(10, (x, y) => { if (x < 2 || x > 13) return nz([96, 62, 34], 8); if (y >= 3 && y <= 6 && x >= 4 && x <= 11) return nz([150, 200, 230], 10); if (x === 11 && y === 9) return [220, 190, 80]; return nz([140, 92, 50], 12); });   // kitchen door
+paint(11, (x, y) => { if (x < 1 || x > 14 || y < 1) return nz([150, 156, 164], 6); if (x === 12 && y > 3 && y < 12) return [80, 84, 90]; return nz([226, 230, 236], 6); });   // fridge
+paint(12, (x, y) => { if (x === 0 || x === 15 || y === 0 || y === 15 || x === 7 || x === 8) return nz([96, 64, 36], 8); if ((x === 5 || x === 10) && y === 7) return [220, 190, 80]; return nz([170, 120, 72], 12); });   // cupboard
+paint(13, (x, y) => { if (y % 5 === 0 || x === 0 || x === 15) return nz([96, 64, 36], 8); if ((x === 7 || x === 8) && y % 5 === 2) return [220, 190, 80]; return nz([176, 128, 80], 12); });   // drawers
+paint(14, (x, y) => (x < 2 || x > 13 || y % 5 === 0) ? nz([120, 86, 50], 10) : nz([196, 152, 98], 14));   // crate
+paint(15, (x, y) => { if (y < 4 && (x < 4 || x > 11)) return [0, 0, 0, 0]; if (y === 4 || y === 5) return nz([120, 90, 50], 8); return (x + y) % 3 ? nz([196, 168, 120], 14) : nz([176, 148, 100], 14); });   // sack
+paint(16, (x, y) => { if (y < 2) return nz([200, 60, 50], 10); if (x < 2 || x > 13) return nz([170, 176, 184], 8); return y > 5 && y < 11 ? nz([240, 230, 200], 10) : nz([196, 202, 210], 8); });   // tin
+paint(17, (x, y) => { if (y < 3 && x > 2 && x < 13) return nz([190, 60, 40], 10); if (x < 2 || x > 13 || y < 3) return [0, 0, 0, 0]; return (x === 3 || x === 12) ? [220, 236, 240, 255] : nz([180, 210, 220], 10); });   // jar
+paint(18, (x, y) => { if (y < 6) return (x < 3 || x > 12) ? [0, 0, 0, 0] : (y === 2 && x > 4 && x < 11 ? nz([140, 100, 50], 8) : [0, 0, 0, 0]); return (x + y * 2) % 4 < 2 ? nz([186, 140, 80], 12) : nz([150, 108, 58], 12); });   // basket
+paint(19, (x, y) => { if (y === 2 || y === 13) return nz([120, 124, 130], 8); return x % 5 === 0 ? nz([190, 194, 200], 6) : nz([226, 230, 236], 6); });   // milk churn
+paint(20, (x, y) => { if (y < 3) return nz([200, 204, 212], 8); if (y < 8 && x > 3 && x < 12) return nz([90, 140, 190], 10); if (x === 8 && y >= 8 && y < 12) return [180, 184, 190]; return nz([156, 112, 70], 12); });   // sink with tap
+paint(21, (x, y) => { if (x < 1 || x > 14 || y < 1 || y > 14) return nz([80, 84, 90], 6); return y > 4 && y < 12 && x > 2 && x < 13 ? (y > 8 ? [255, 150, 40] : nz([60, 40, 30], 8)) : nz([60, 62, 68], 6); });   // oven front, glowing
+paint(22, (x, y) => { const d = Math.hypot(x - 7.5, y - 7.5); return d < 3 || (d > 5 && d < 6.5) ? nz([60, 60, 64], 6) : nz([30, 30, 34], 6); });   // stove top
+paint(23, (x, y) => { const d = Math.hypot(x - 7.5, y - 7.5); return d < 6.5 ? (d < 5 ? nz([96, 170, 70], 30) : nz([240, 240, 236], 6)) : [0, 0, 0, 0]; });   // salad bowl top
+paint(24, (x, y) => (x < 1 || x > 14) ? [0, 0, 0, 0] : (y < 3 ? nz([200, 200, 196], 6) : nz([240, 240, 236], 8)));   // salad bowl side
+paint(25, (x, y) => { const d = Math.hypot(x - 7.5, y - 7.5); return d < 6.5 ? (d < 5 ? nz([140, 80, 40], 20) : nz([180, 70, 40], 8)) : nz([30, 30, 34], 6); });   // cassoulet pot top
+paint(26, (x, y) => (y < 2 || y > 13) ? nz([150, 60, 36], 6) : nz([196, 82, 46], 10));   // cast-iron pot side (red enamel)
+paint(27, (x, y) => (Math.floor(x / 4) + Math.floor(y / 4)) % 2 ? nz([196, 40, 40], 8) : nz([244, 240, 232], 6));   // gingham tablecloth
+paint(28, (x, y) => { if (x < 1 || x > 14 || y < 1 || y > 14) return nz([110, 80, 50], 8); if (x === 7 || x === 8 || y === 7 || y === 8) return nz([110, 80, 50], 8);
+  const sky = [24 + y * 3, 34 + y * 4, 80 + y * 4]; if (x >= 9 && x <= 12 && y >= 2 && y <= 13 && Math.abs(x - 10.5) <= (y - 2) * 0.2 + 0.5) return [60, 50, 60]; return (x * 7 + y * 3) % 23 === 0 ? [255, 255, 220] : sky; });   // window: Paris at night (with a certain tower)
+paint(29, (x) => x < 5 ? nz([0, 85, 164], 8) : x < 11 ? nz([248, 248, 248], 6) : nz([239, 65, 53], 8));   // tricolore
+paint(30, (x, y) => { if (x < 1 || x > 14 || y < 1 || y > 14) return nz([120, 84, 50], 8); return ((y === 4 || y === 7 || y === 10) && x > 2 && x < 13 && (x * 5 + y) % 4 < 3) ? [236, 236, 230] : nz([40, 46, 44], 8); });   // chalk menu board
+paint(31, (x, y) => { if (y < 5) return rnd() < 0.5 ? [0, 0, 0, 0] : [255, 190, 50]; return nz(y > 10 ? [255, 120, 30] : [255, 205, 70], 40); });   // flames
+paint(32, (x, y) => { const d = Math.hypot(x - 7.5, y - 8.5); if (x >= 7 && x <= 8 && y < 3) return nz([150, 80, 40], 10); return d < 5.5 ? nz([196, 112, 56], 16) : d < 6.8 ? nz([150, 80, 40], 10) : (y % 4 === 0 ? nz([150, 154, 162], 6) : nz([200, 204, 212], 8)); });   // copper pan on a steel rack
+paint(33, (x, y) => (x % 4 === 0) ? nz([112, 76, 44], 8) : nz([164, 116, 72], 12));   // wooden floor
+paint(34, () => nz([246, 246, 246], 12));                                  // plain: skin, cloth (tinted)
+paint(35, (x, y) => {                                                      // face: wide eyes, open mouth
+  if (y >= 6 && y <= 7 && (x === 4 || x === 11)) return [255, 255, 255];
+  if (y >= 6 && y <= 7 && (x === 5 || x === 10)) return [30, 22, 20];
+  if (y === 4 && ((x >= 3 && x <= 5) || (x >= 10 && x <= 12))) return [90, 70, 60];
+  if (y >= 10 && y <= 12 && x >= 7 && x <= 8) return [70, 20, 20];
+  return nz([246, 246, 246], 10);
+});
+paint(36, (x, y) => ((x === 5 || x === 10) && y % 4 === 2) ? [190, 190, 196] : nz([248, 248, 248], 6));   // chef's jacket (double-breasted)
+paint(37, (x, y) => {                                                      // chef's face with a magnificent moustache
+  if (y >= 5 && y <= 6 && (x === 4 || x === 11)) return [255, 255, 255];
+  if (y >= 5 && y <= 6 && (x === 5 || x === 10)) return [30, 22, 20];
+  if (y >= 9 && y <= 10 && x >= 2 && x <= 13 && !(y === 9 && (x === 2 || x === 13))) return [40, 26, 18];
+  if (y === 11 && (x === 2 || x === 13)) return [40, 26, 18];
+  return nz([246, 246, 246], 10);
+});
+paint(38, (x, y) => { const d = Math.hypot(x - 7.5, y - 7.5); if (d > 7.2) return [0, 0, 0, 0]; if (d > 6) return nz([240, 240, 236], 6); return (x + y) % 5 === 0 ? [210, 50, 40] : (x * y) % 7 === 1 ? [240, 220, 140] : nz([96, 170, 70], 30); });   // plated salad
+paint(39, (x, y) => { const d = Math.hypot(x - 7.5, y - 7.5); if (d > 7.2) return [0, 0, 0, 0]; if (d > 6) return nz([240, 240, 236], 6); return (x * 3 + y) % 6 === 0 ? [240, 230, 200] : nz([150, 84, 40], 20); });   // plated cassoulet
+paint(40, (x, y) => { const d = Math.hypot(x - 7.5, y - 7.5); if (d > 7.2) return [0, 0, 0, 0]; if (d > 6) return nz([240, 240, 236], 6); return (y % 5 < 3 && x > 2 && x < 13) ? (y % 5 === 0 ? nz([90, 50, 26], 10) : nz([220, 170, 100], 10)) : nz([244, 240, 232], 6); });   // plated éclairs
+paint(41, (x, y) => (y < 2 || y > 13 || x < 1 || x > 14) ? nz([90, 62, 38], 8) : nz([156, 112, 70], 14));   // chair / plain wood
+paint(42, (x, y) => (x < 2 || x > 13 || y < 2) ? nz([70, 70, 76], 6) : nz([40, 40, 44], 6));   // oven side
+actx.putImageData(atlasImg, 0, 0);
+
+// ════════════════════════════════════════════════════════════════
+// BLOCKS
+// ════════════════════════════════════════════════════════════════
+const B = { AIR: 0, FLOOR: 1, WALLW: 2, WALLB: 3, WALLY: 4, WALLP: 5, COUNTER: 6, CEIL: 7, LAMP: 8, BRICK: 9, GATE: 10, FRIDGE: 11, FRIDGEL: 12, CUPB: 13, DRAWER: 14,
+  CRATE: 15, SACK: 16, TIN: 17, JAR: 18, BASKET: 19, BARREL: 20, SINK: 21, OVEN: 22, STOVE: 23, BOWL: 24, POT: 25, TABLE: 26, WINDOW: 27, FLAG: 28, MENU: 29,
+  FIRE: 30, COPPER: 31, PLANKS: 32, DISH1: 33, DISH2: 34, DISH3: 35, CHAIR: 36, WATER: 37, BACKDOOR: 38, STEEL: 39 };
+const BL = [];
+function defB(id, tex, o) { const t = Array.isArray(tex) ? tex : [tex, tex, tex]; BL[id] = Object.assign({ top: t[0], side: t[1], bottom: t[2], solid: true, opaque: true }, o || {}); }
+defB(B.AIR, 0, { solid: false, opaque: false });
+defB(B.FLOOR, 0); defB(B.WALLW, 1); defB(B.WALLB, 2); defB(B.WALLY, 3); defB(B.WALLP, 4);
+defB(B.COUNTER, [5, 6, 5]); defB(B.CEIL, 7); defB(B.LAMP, 8, { emissive: true }); defB(B.BRICK, 9); defB(B.GATE, [10, 10, 10]); defB(B.BACKDOOR, 10, { note: true });
+defB(B.FRIDGE, [5, 11, 5], { lock: 'FRIDGE' }); defB(B.FRIDGEL, [5, 11, 5]);
+defB(B.CUPB, [5, 12, 5], { lock: 'CUPB' }); defB(B.DRAWER, [5, 13, 5], { lock: 'DRAWER' }); defB(B.SINK, [20, 20, 5], { lock: 'SINK' });
+defB(B.CRATE, 14, { lock: 'CRATE' }); defB(B.SACK, [15, 15, 15], { lock: 'SACK', opaque: false, alpha: true }); defB(B.TIN, [16, 16, 16], { lock: 'TIN' });
+defB(B.JAR, [17, 17, 17], { lock: 'JAR', opaque: false, alpha: true }); defB(B.BASKET, [18, 18, 18], { lock: 'BASKET', opaque: false, alpha: true }); defB(B.BARREL, [19, 19, 19], { lock: 'BARREL' });
+defB(B.OVEN, [42, 21, 42], { station: 2 }); defB(B.STOVE, [22, 42, 42]); defB(B.BOWL, [23, 24, 24], { station: 0, opaque: false, alpha: true }); defB(B.POT, [25, 26, 26], { station: 1 });
+defB(B.TABLE, [27, 41, 41]); defB(B.WINDOW, 28); defB(B.FLAG, 29); defB(B.MENU, 30, { note: true });
+defB(B.FIRE, 31, { opaque: false, alpha: true, emissive: true, solid: false }); defB(B.COPPER, 32);
+defB(B.PLANKS, 33); defB(B.DISH1, [38, 41, 41], { opaque: false, alpha: true }); defB(B.DISH2, [39, 41, 41], { opaque: false, alpha: true }); defB(B.DISH3, [40, 41, 41], { opaque: false, alpha: true });
+defB(B.CHAIR, 41); defB(B.WATER, 23, { solid: false, opaque: false, liquid: true }); defB(B.STEEL, 5);
+
+// ════════════════════════════════════════════════════════════════
+// WORLD: three kitchens in a row, then the dining room
+// ════════════════════════════════════════════════════════════════
+const W = 112, H = 32, D = 80, G = 4, CS = 16;
+const NCX = W / CS, NCY = H / CS, NCZ = D / CS;
+const world = new Uint8Array(W * H * D);
+const RX = [4, 34, 64, 94, 110];      // wall x of each room
+const Z0 = 34, Z1 = 62, WALLH = 7;
+const START = { x: 7.5, z: 48.5, yaw: Math.PI / 2 };
+let LOCKS = [], lockMap = new Map(), GATES = [[], [], []], gateMap = new Map(), STATIONS = [], NOTES = new Map();
+const key3 = (x, y, z) => x + ',' + y + ',' + z;
+function getB(x, y, z) {
+  if (y < 0) return B.FLOOR;
+  if (x < 0 || y >= H || z < 0 || x >= W || z >= D) return B.AIR;
+  return world[(y * D + z) * W + x];
+}
+function setRaw(x, y, z, b) { if (x < 0 || y < 0 || z < 0 || x >= W || y >= H || z >= D) return; world[(y * D + z) * W + x] = b; }
+function setB(x, y, z, b) { setRaw(x, y, z, b); markDirty(x, y, z); }
+function fill(x0, y0, z0, x1, y1, z1, b) {
+  for (let y = Math.min(y0, y1); y <= Math.max(y0, y1); y++)
+    for (let z = Math.min(z0, z1); z <= Math.max(z0, z1); z++)
+      for (let x = Math.min(x0, x1); x <= Math.max(x0, x1); x++) setRaw(x, y, z, b);
+}
+function addLock(room, k, x, y, z, b) { setRaw(x, y, z, b); const L = { room, k, x, y, z, b, done: false }; LOCKS.push(L); lockMap.set(key3(x, y, z), L); return L; }
+function addGate(room, x0, y0, z0, x1, y1, z1) {
+  for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) { setRaw(x, y, z, B.GATE); GATES[room].push([x, y, z]); gateMap.set(key3(x, y, z), room); }
+}
+function addNote(x, y, z, b, note) { setRaw(x, y, z, b); NOTES.set(key3(x, y, z), note); }
+
+function generateWorld() {
+  seed = 4242; world.fill(0);
+  LOCKS = []; lockMap = new Map(); GATES = [[], [], []]; gateMap = new Map(); STATIONS = []; NOTES = new Map();
+  fill(0, 0, 0, W - 1, G - 1, D - 1, B.BRICK);                          // the cellar under everything
+  for (let r = 0; r < 4; r++) buildRoom(r);
+  // the back door the chef has locked
+  addNote(RX[0], G, 48, B.BACKDOOR, { title: 'La porte de derrière', fr: 'FERMÉ! Personne ne sort avant le dîner. – Chef Gaston', en: 'CLOSED! Nobody leaves before dinner. – Chef Gaston',
+    about: 'The back door is locked. The only way out is through the kitchens and into the dining room.' });
+  setRaw(RX[0], G + 1, 48, B.BACKDOOR);
+}
+function buildRoom(r) {
+  const x0 = RX[r], x1 = RX[r + 1], dining = r === 3;
+  const wall = dining ? B.BRICK : B[COURSES[r].wall];
+  fill(x0, G - 1, Z0, x1, G - 1, Z1, dining ? B.PLANKS : B.FLOOR);
+  fill(x0, G, Z0, x1, G + WALLH - 1, Z0, wall); fill(x0, G, Z1, x1, G + WALLH - 1, Z1, wall);
+  if (r === 0) fill(x0, G, Z0, x0, G + WALLH - 1, Z1, wall);
+  fill(x1, G, Z0, x1, G + WALLH - 1, Z1, dining ? B.BRICK : wall);
+  fill(x0, G + WALLH, Z0, x1, G + WALLH, Z1, B.CEIL);
+  for (let x = x0 + 4; x < x1 - 2; x += 6) for (let z = Z0 + 5; z < Z1 - 2; z += 8) setRaw(x, G + WALLH, z, B.LAMP);
+  // decoration: windows onto Paris, copper pans, a flag
+  for (const wx of [x0 + 5, x0 + (dining ? 10 : 20)]) { fill(wx, G + 2, Z1, wx + 1, G + 3, Z1, B.WINDOW); }
+  if (dining) { buildDining(x0, x1); return; }
+  fill(x1 - 1, G + 4, Z0, x1 - 1, G + 4, Z0, B.FLAG);
+  for (let x = x0 + 3; x < x1 - 3; x += 3) setRaw(x, G + 3, Z0, B.COPPER);
+  // counters along the north and south walls, an island in the middle
+  fill(x0 + 2, G, Z0 + 1, x1 - 2, G, Z0 + 1, B.COUNTER);
+  fill(x0 + 2, G, Z1 - 1, x1 - 2, G, Z1 - 1, B.COUNTER);
+  fill(x0 + 10, G, 52, x0 + 20, G, 53, B.COUNTER);
+  setRaw(x0 + 3, G, Z1 - 1, B.STOVE); setRaw(x0 + 3, G + 1, Z1 - 1, B.FIRE);
+  setRaw(x0 + 26, G, Z1 - 1, B.STOVE); setRaw(x0 + 26, G + 1, Z1 - 1, B.FIRE);
+  const st = { BOWL: B.BOWL, POT: B.POT, OVEN: B.OVEN }[COURSES[r].station];
+  if (st === B.POT) { setRaw(x0 + 15, G, 52, B.STOVE); setRaw(x0 + 15, G + 1, 52, B.POT); }
+  else if (st === B.OVEN) { setRaw(x0 + 15, G, 52, B.OVEN); setRaw(x0 + 15, G + 1, 52, B.OVEN); }
+  else setRaw(x0 + 15, G + 1, 52, B.BOWL);
+  STATIONS[r] = { r, x: x0 + 15, y: G + 1, z: 52, done: false };
+  // the chalkboard menu
+  addNote(x0 + 2, G + 2, Z0, B.MENU, MENU_NOTES[r]);
+  // the pass, where the finished dish waits
+  fill(x1 - 3, G, 44, x1 - 3, G, 45, B.STEEL);
+  // the door to the next room
+  addGate(r, x1, G, 47, x1, G + 2, 49);
+  // the ten locked stores
+  const counterSlots = [[x0 + 4, Z0 + 1], [x0 + 8, Z0 + 1], [x0 + 12, Z0 + 1], [x0 + 16, Z0 + 1], [x0 + 20, Z0 + 1], [x0 + 23, Z0 + 1], [x0 + 8, Z1 - 1], [x0 + 13, Z1 - 1], [x0 + 18, Z1 - 1], [x0 + 22, Z1 - 1]];
+  const floorSlots = [[x0 + 6, 41], [x0 + 24, 41], [x0 + 15, 38], [x0 + 6, 56]];
+  let ci = 0, fi = 0;
+  COURSES[r].items.forEach((it, k) => {
+    const b = B[it[2]], kind = STORE_KIND[it[2]];
+    if (kind === 'floor') { const [x, z] = floorSlots[fi++]; addLock(r, k, x, G, z, b); return; }
+    const [x, z] = counterSlots[ci++];
+    if (kind === 'tall') { setRaw(x, G, z, B.FRIDGEL); addLock(r, k, x, G + 1, z, b); }
+    else if (kind === 'low') addLock(r, k, x, G, z, b);
+    else addLock(r, k, x, G + 1, z, b);
+  });
+}
+function buildDining(x0, x1) {
+  fill(x1, G, 46, x1, G + 3, 50, B.BRICK);
+  setRaw(x1 - 1, G + 4, Z0, B.FLAG);
+  const tables = [[x0 + 4, 39], [x0 + 4, 57], [x0 + 11, 39], [x0 + 11, 57], [x0 + 9, 47]];
+  tables.forEach(([x, z]) => { fill(x, G, z, x + 1, G, z + 1, B.TABLE); setRaw(x - 1, G, z, B.CHAIR); setRaw(x + 2, G, z + 1, B.CHAIR); });
+  addNote(x0 + 2, G + 2, Z0, B.MENU, MENU_NOTES[3]);
+}
+const MENU_NOTES = [
+  { title: 'Le menu du soir', fr: 'Entrée: salade niçoise. Plat: cassoulet de canard. Dessert: éclairs au chocolat.', en: 'Starter: salade niçoise. Main course: duck cassoulet. Dessert: chocolate éclairs.',
+    about: 'Chef Gaston has written tonight’s menu on the board. Someone has added, in very small writing: “Pas d’escargots, s’il vous plaît.” No snails, please.' },
+  { title: 'Une note du chef', fr: 'Le cassoulet: trois heures de cuisson. Nous n’avons pas trois heures. Courage!', en: 'Cassoulet: three hours of cooking. We do not have three hours. Courage!',
+    about: 'Real cassoulet comes from the south-west of France, around Toulouse and Castelnaudary. People argue about the true recipe. Loudly.' },
+  { title: 'La règle du pâtissier', fr: 'Ne jamais ouvrir le four! Jamais! JAMAIS!', en: 'Never open the oven! Never! NEVER!',
+    about: 'Éclairs are made from choux pastry, which puffs up with steam. Open the oven too early and they collapse. The pastry chef has strong feelings about this.' },
+  { title: 'Le menu du restaurant', fr: 'Ce soir, la critique gastronomique Madame Lagrange dîne chez nous.', en: 'Tonight the food critic Madame Lagrange is dining with us.',
+    about: 'A bad review from Madame Lagrange can close a restaurant. A good one can make it famous. No pressure.' },
+];
+
+// ════════════════════════════════════════════════════════════════
+// LES VERBES
+// Every verb, form and translation follows the French department's
+// own sheets: the verb ladder, "Verbs basic", the Present, Perfect,
+// Perfect être and Near future sheets, and the Downe House quiz answers.
+// ════════════════════════════════════════════════════════════════
+const VERBS = [
+  { inf: 'donner', grp: 'er', en: ['give', 'gives', 'gave', 'giving'] },
+  { inf: 'jouer', grp: 'er', en: ['play', 'plays', 'played', 'playing'] },
+  { inf: 'aimer', grp: 'er', en: ['like', 'likes', 'liked', 'liking'] },
+  { inf: 'écouter', grp: 'er', en: ['listen', 'listens', 'listened', 'listening'] },
+  { inf: 'regarder', grp: 'er', en: ['watch', 'watches', 'watched', 'watching'] },
+  { inf: 'manger', grp: 'er', en: ['eat', 'eats', 'ate', 'eating'] },
+  { inf: 'finir', grp: 'ir', en: ['finish', 'finishes', 'finished', 'finishing'] },
+  { inf: 'vendre', grp: 're', en: ['sell', 'sells', 'sold', 'selling'] },
+  { inf: 'perdre', grp: 're', en: ['lose', 'loses', 'lost', 'losing'] },
+  { inf: 'entendre', grp: 're', en: ['hear', 'hears', 'heard', 'hearing'] },
+  { inf: 'avoir', grp: 'irr', en: ['have', 'has', 'had', 'having'] },
+  { inf: 'être', grp: 'irr', en: ['be', 'is', 'was', 'being'] },
+  { inf: 'aller', grp: 'irr', en: ['go', 'goes', 'went', 'going'] },
+];
+const VGROUPS = [
+  { k: 'er', name: 'Regular -er verbs' }, { k: 'ir', name: 'Regular -ir verbs' }, { k: 're', name: 'Regular -re verbs' }, { k: 'irr', name: 'avoir, être and aller' },
+];
+const TENSES = [
+  { k: 'pres', name: 'Le présent', en: 'present' },
+  { k: 'pc', name: 'Le passé composé', en: 'perfect' },
+  { k: 'fut', name: 'Le futur proche (je vais aller)', en: 'near future' },
+];
+const TENSE_FR = { pres: 'présent', pc: 'passé composé', fut: 'futur proche' };
+// Persons: French subject, English subject, which English verb form, plural?
+const PERSONS = [
+  { k: 'je', fr: 'je', en: 'I', be: 'am', has: false, pl: false },
+  { k: 'tu', fr: 'tu', en: 'you (sg)', be: 'are', has: false, pl: false },
+  { k: 'il', fr: 'il', en: 'he', be: 'is', has: true, pl: false },
+  { k: 'elle', fr: 'elle', en: 'she', be: 'is', has: true, pl: false },
+  { k: 'on', fr: 'on', en: 'we (on)', be: 'are', has: false, pl: true },
+  { k: 'nous', fr: 'nous', en: 'we', be: 'are', has: false, pl: true },
+  { k: 'vous', fr: 'vous', en: 'you (pl)', be: 'are', has: false, pl: true },
+  { k: 'ils', fr: 'ils', en: 'they (m)', be: 'are', has: false, pl: true },
+  { k: 'elles', fr: 'elles', en: 'they (f)', be: 'are', has: false, pl: true },
+];
+const PI = k => PERSONS.findIndex(p => p.k === k);
+// Present-tense endings, as on the Present sheet and "Verbs basic"
+const END = {
+  er: ['e', 'es', 'e', 'e', 'e', 'ons', 'ez', 'ent', 'ent'],
+  ir: ['is', 'is', 'it', 'it', 'it', 'issons', 'issez', 'issent', 'issent'],
+  re: ['s', 's', '', '', '', 'ons', 'ez', 'ent', 'ent'],
+};
+const IRR_PRES = {
+  avoir: ['ai', 'as', 'a', 'a', 'a', 'avons', 'avez', 'ont', 'ont'],
+  être: ['suis', 'es', 'est', 'est', 'est', 'sommes', 'êtes', 'sont', 'sont'],
+  aller: ['vais', 'vas', 'va', 'va', 'va', 'allons', 'allez', 'vont', 'vont'],
+};
+const PP = { avoir: 'eu', être: 'été', aller: 'allé' };   // from the Perfect irregular and Perfect être sheets
+const vowel = s => /^[aeéèêiouyh]/i.test(s);
+const verb = inf => VERBS.find(v => v.inf === inf);
+
+function presForm(v, i) {
+  if (IRR_PRES[v.inf]) return IRR_PRES[v.inf][i];
+  const stem = v.inf.slice(0, -2);
+  if (v.inf === 'manger' && i === 5) return 'mangeons';
+  return stem + END[v.grp][i];
+}
+function pastPart(v) { return PP[v.inf] || v.inf.slice(0, -2) + (v.grp === 'er' ? 'é' : v.grp === 'ir' ? 'i' : 'u'); }
+// Agreement for aller in the passé composé: g = 'm' | 'f'
+function agree(pp, i, g) {
+  const p = PERSONS[i];
+  if (p.k === 'il' || p.k === 'ils') g = 'm'; else if (p.k === 'elle' || p.k === 'elles') g = 'f';
+  return pp + (g === 'f' ? 'e' : '') + (p.pl && p.k !== 'on' ? 's' : '');
+}
+// The verb part only, without the subject
+function verbPart(v, tense, i, g) {
+  if (tense === 'pres') return presForm(v, i);
+  if (tense === 'fut') return IRR_PRES.aller[i] + ' ' + v.inf;
+  if (v.inf === 'aller') return IRR_PRES.être[i] + ' ' + agree('allé', i, g);
+  return IRR_PRES.avoir[i] + ' ' + pastPart(v);
+}
+// je + vowel → j'
+function phrase(i, vp) { const s = PERSONS[i].fr; return s === 'je' && vowel(vp) ? "j'" + vp : s + ' ' + vp; }
+function conj(v, tense, i, g) { return phrase(i, verbPart(v, tense, i, g)); }
+
+// English: "we finish", "she is going to sell", "they went"
+function english(v, tense, i) {
+  const p = PERSONS[i], [base, s3, past] = v.en;
+  if (tense === 'fut') return `${p.en} ${p.be} going to ${base}`;
+  if (tense === 'pc') {
+    if (v.inf === 'être') return `${p.en} ${p.has ? 'has' : 'have'} been`;
+    return `${p.en} ${past}`;
+  }
+  if (v.inf === 'être') return `${p.en} ${p.be}`;
+  if (v.inf === 'avoir') return `${p.en} ${p.has ? 'has' : 'have'}`;
+  return `${p.en} ${p.has ? s3 : base}`;
+}
+// How the subject is shown in a question: aller in the passé composé needs to know who
+function subjectLabel(i, g, v, tense) {
+  const p = PERSONS[i];
+  if (!(v.inf === 'aller' && tense === 'pc')) return p.fr;
+  const boy = g === 'm';
+  return { je: boy ? 'je (a boy)' : 'je (a girl)', tu: boy ? 'tu (a boy)' : 'tu (a girl)', nous: boy ? 'nous (boys)' : 'nous (girls)', vous: boy ? 'vous (a group of boys)' : 'vous (a group of girls)' }[p.k] || p.fr;
+}
+function verbTable(v, tense) {
+  return [0, 2, 3, 5, 6, 7].map(i => {
+    let fr = conj(v, tense, i, 'm');
+    if (v.inf === 'aller' && tense === 'pc' && ['je', 'tu', 'nous', 'vous'].includes(PERSONS[i].k)) fr = fr.replace(/allé(s?)$/, 'allé(e)$1');
+    if (i === 2 && v.inf === 'aller' && tense === 'pc') fr = 'il est allé / elle est allée';
+    else if (i === 2) fr = fr + ' (il / elle / on)';
+    return [PERSONS[i].k === 'il' ? 'il / elle / on' : PERSONS[i].fr, fr.replace(/ \(il \/ elle \/ on\)$/, ''), english(v, tense, i).replace(/^he /, 'he / she / we ')];
+  });
+}
+
+// ── Answer checking for typed answers ──
+const norm = s => s.toLowerCase().replace(/[’`´]/g, "'").replace(/\s+/g, ' ').replace(/[.!?]+$/, '').trim();
+const strip = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+function checkTyped(q, typed) {
+  const t = norm(typed); if (!t) return null;
+  const want = norm(q.answer), wantVp = norm(q.vp);
+  if (t === want || t === wantVp) return 'ok';
+  if (strip(t) === strip(want) || strip(t) === strip(wantVp)) return 'accents';
+  return 'no';
+}
+
+// ── Building questions ──
+let pickedVerbs = new Set(VERBS.map(v => v.inf)), pickedTenses = new Set(TENSES.map(t => t.k)), pickedTypes = new Set(['mc', 'typed']);
+function wrongForms(v, tense, i, g) {
+  const right = conj(v, tense, i, g), out = new Set();
+  const add = s => { if (s && s !== right) out.add(s); };
+  // the same subject with another person's ending
+  [0, 1, 2, 5, 6, 7].forEach(j => { if (j !== i && presForm(v, j) !== presForm(v, i)) add(phrase(i, verbPart(v, tense, j, g))); });
+  if (tense === 'pres') { add(phrase(i, v.inf)); }
+  if (tense === 'pc') {
+    if (v.inf === 'aller') { add(phrase(i, IRR_PRES.avoir[i] + ' allé')); add(phrase(i, IRR_PRES.être[i] + ' aller')); add(phrase(i, IRR_PRES.être[i] + ' ' + agree('allé', i, g === 'm' ? 'f' : 'm'))); }
+    else { add(phrase(i, IRR_PRES.être[i] + ' ' + pastPart(v))); add(phrase(i, IRR_PRES.avoir[i] + ' ' + v.inf)); }
+  }
+  if (tense === 'fut') { add(phrase(i, IRR_PRES.aller[i] + ' ' + presForm(v, i))); add(phrase(i, presForm(verb('aller'), i))); }
+  // the same subject in another tense
+  ['pres', 'pc', 'fut'].forEach(t => { if (t !== tense) add(conj(v, t, i, g)); });
+  // "je ai": a missing elision
+  if (PERSONS[i].k === 'je' && right.startsWith("j'")) add('je ' + right.slice(2));
+  return [...out];
+}
+function makeQuestion(v, tense, i, g, type) {
+  const q = { v, tense, i, g, type, answer: conj(v, tense, i, g), vp: verbPart(v, tense, i, g), en: english(v, tense, i), subj: subjectLabel(i, g, v, tense) };
+  if (type === 'typed') { q.prompt = 'Write the French.'; return q; }
+  if (type === 'fr2en') {
+    const wrong = new Set();
+    ['pres', 'pc', 'fut'].forEach(t => { if (t !== tense) wrong.add(english(v, t, i)); });
+    [0, 2, 3, 5, 6, 7].forEach(j => { const e = english(v, tense, j); if (e !== q.en && conj(v, tense, j, g) !== q.answer) wrong.add(e); });
+    wrong.delete(q.en);
+    q.opts = shuffle([{ text: q.en, ok: true }, ...shuffle([...wrong]).slice(0, 3).map(t => ({ text: t, ok: false }))]);
+    q.prompt = 'What does this mean in English?';
+    return q;
+  }
+  // 'form' and 'en2fr' both choose the French
+  let wrong = wrongForms(v, tense, i, g);
+  if (type === 'en2fr') {
+    [0, 2, 3, 5, 6, 7].forEach(j => { if (j !== i && english(v, tense, j) !== q.en) wrong.push(conj(v, tense, j, g)); });
+    wrong = wrong.filter(w => w !== q.answer);
+  }
+  const pickW = [...new Set(wrong)];
+  // keep one mistake of each kind where possible: wrong tense, wrong ending, wrong helper verb
+  q.opts = shuffle([{ text: q.answer, ok: true }, ...shuffle(pickW).slice(0, 3).map(t => ({ text: t, ok: false }))]);
+  q.prompt = type === 'en2fr' ? 'How do you say this in French?' : 'Choose the correct form.';
+  return q;
+}
+const TENSE_RANK = { pres: 0, fut: 1, pc: 2 };
+function buildQuestions(n) {
+  const vs = VERBS.filter(v => pickedVerbs.has(v.inf)), ts = TENSES.filter(t => pickedTenses.has(t.k)).map(t => t.k);
+  const used = new Set(), qs = [];
+  let typeCycle = [];
+  const typeOrder = () => {
+    const mc = ['form', 'en2fr', 'fr2en'];
+    if (pickedTypes.has('mc') && pickedTypes.has('typed')) return shuffle([...mc, 'typed']);
+    if (pickedTypes.has('typed')) return ['typed'];
+    return shuffle(mc);
+  };
+  let guard = 0;
+  while (qs.length < n && guard++ < 4000) {
+    const v = pick(vs), tense = pick(ts);
+    let i = Math.floor(Math.random() * PERSONS.length);
+    if (v.inf === 'aller' && tense === 'pc' && PERSONS[i].k === 'on') continue;
+    const g = Math.random() < 0.5 ? 'm' : 'f';
+    const key = v.inf + tense + i;
+    if (used.has(key) && guard < 3000) continue;
+    used.add(key);
+    if (!typeCycle.length) typeCycle = typeOrder();
+    qs.push(makeQuestion(v, tense, i, g, typeCycle.shift()));
+  }
+  // Each course gets ten; easier tenses come first within the whole meal
+  qs.sort((a, b) => TENSE_RANK[a.tense] - TENSE_RANK[b.tense]);
+  return qs;
+}
+
+// ════════════════════════════════════════════════════════════════
+// WEBGL
+// ════════════════════════════════════════════════════════════════
+const canvas = $('gl');
+const gl = canvas.getContext('webgl', { antialias: false, alpha: false });
+if (!gl) $('noGL').style.display = 'grid';
+
+function compile(vs, fs) {
+  const p = gl.createProgram();
+  [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]].forEach(([t, src]) => {
+    const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
+    gl.attachShader(p, s);
+  });
+  gl.linkProgram(p);
+  const info = { p, a: {}, u: {} };
+  const na = gl.getProgramParameter(p, gl.ACTIVE_ATTRIBUTES);
+  for (let i = 0; i < na; i++) { const n = gl.getActiveAttrib(p, i).name; info.a[n] = gl.getAttribLocation(p, n); }
+  const nu = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < nu; i++) { const n = gl.getActiveUniform(p, i).name; info.u[n] = gl.getUniformLocation(p, n); }
+  return info;
+}
+let blockProg, pointProg, atlasTex;
+if (gl) {
+  blockProg = compile(`
+    attribute vec3 aPos; attribute vec2 aUV; attribute vec3 aCol;
+    uniform mat4 uMVP; uniform vec3 uEye; uniform vec2 uFog;
+    varying vec2 vUV; varying vec3 vCol; varying float vFog;
+    void main(){ gl_Position = uMVP * vec4(aPos,1.0); vUV = aUV; vCol = aCol;
+      vFog = clamp((distance(aPos,uEye) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, `
+    precision mediump float;
+    uniform sampler2D uTex; uniform vec3 uFogCol; uniform float uAlpha; uniform float uLight;
+    varying vec2 vUV; varying vec3 vCol; varying float vFog;
+    void main(){ vec4 t = texture2D(uTex, vUV); if (t.a < 0.5) discard;
+      gl_FragColor = vec4(mix(t.rgb * vCol * uLight, uFogCol, vFog), uAlpha); }`);
+  pointProg = compile(`
+    attribute vec3 aPos; attribute vec4 aCol; attribute float aSize;
+    uniform mat4 uMVP; uniform float uScale; uniform vec3 uEye; uniform vec2 uFog;
+    varying vec4 vCol; varying float vFog;
+    void main(){ gl_Position = uMVP * vec4(aPos,1.0); gl_PointSize = max(1.0, aSize * uScale / gl_Position.w); vCol = aCol;
+      vFog = clamp((distance(aPos,uEye) - uFog.x) / (uFog.y - uFog.x), 0.0, 1.0); }`, `
+    precision mediump float;
+    uniform vec3 uFogCol; varying vec4 vCol; varying float vFog;
+    void main(){ gl_FragColor = vec4(mix(vCol.rgb, uFogCol, vFog * 0.85), vCol.a); }`);
+  atlasTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlasCanvas);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+}
+
+// ── Chunk meshing with per-vertex ambient occlusion ──
+const FACES = [];
+for (let d = 0; d < 3; d++) for (const s of [1, -1]) {
+  const n = [0, 0, 0]; n[d] = s;
+  FACES.push({ d, s, n, u: (d + 1) % 3, v: (d + 2) % 3, key: d === 1 ? (s > 0 ? 'top' : 'bottom') : 'side', shade: d === 1 ? (s > 0 ? 1.0 : 0.55) : d === 0 ? 0.82 : 0.7 });
+}
+const AOL = [0.48, 0.64, 0.82, 1.0];
+const isOpq = (x, y, z) => BL[getB(x, y, z)].opaque ? 1 : 0;
+const chunks = [];
+const dirty = new Set();
+function markDirty(x, y, z) {
+  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+    const cx = Math.floor((x + dx) / CS), cy = Math.floor((y + dy) / CS), cz = Math.floor((z + dz) / CS);
+    if (cx < 0 || cy < 0 || cz < 0 || cx >= NCX || cy >= NCY || cz >= NCZ) continue;
+    dirty.add((cy * NCZ + cz) * NCX + cx);
+  }
+}
+function pushFace(out, x, y, z, f, def, tint) {
+  const tile = def[f.key], tx = tile % 16, ty = Math.floor(tile / 16), e = 0.002;
+  const base = [x, y, z]; if (f.s > 0) base[f.d] += 1;
+  const nb = [x + f.n[0], y + f.n[1], z + f.n[2]];
+  const corners = f.s > 0 ? [[0, 0], [1, 0], [1, 1], [0, 1]] : [[0, 0], [0, 1], [1, 1], [1, 0]];
+  const vs = [], aos = [];
+  for (const [cu, cv] of corners) {
+    const p = base.slice(); p[f.u] += cu; p[f.v] += cv;
+    let ao = 3;
+    if (!def.emissive) {
+      const q1 = nb.slice(), q2 = nb.slice(), q3 = nb.slice();
+      q1[f.u] += cu ? 1 : -1; q2[f.v] += cv ? 1 : -1; q3[f.u] += cu ? 1 : -1; q3[f.v] += cv ? 1 : -1;
+      const s1 = isOpq(q1[0], q1[1], q1[2]), s2 = isOpq(q2[0], q2[1], q2[2]), c = isOpq(q3[0], q3[1], q3[2]);
+      ao = s1 && s2 ? 0 : 3 - (s1 + s2 + c);
+    }
+    const l = def.emissive ? 1.15 : f.shade * AOL[ao];
+    let hu, hv;
+    if (f.d === 0) { hu = cv; hv = cu; } else if (f.d === 2) { hu = cu; hv = cv; } else { hu = cv; hv = cu; }
+    const u = (tx + (hu ? 1 - e : e)) / 16, v = (ty + (hv ? e : 1 - e)) / 16;
+    vs.push([p[0], p[1], p[2], u, v, l * tint[0], l * tint[1], l * tint[2]]); aos.push(ao);
+  }
+  const order = aos[0] + aos[2] >= aos[1] + aos[3] ? [0, 1, 2, 0, 2, 3] : [1, 2, 3, 1, 3, 0];
+  for (const i of order) out.push(...vs[i]);
+}
+const NO_TINT = [1, 1, 1], DONE_TINT = [0.85, 1.12, 0.85];
+function buildChunk(ci) {
+  const cx = ci % NCX, cz = Math.floor(ci / NCX) % NCZ, cy = Math.floor(ci / (NCX * NCZ));
+  const o = [], w = [];
+  for (let y = cy * CS; y < cy * CS + CS; y++) for (let z = cz * CS; z < cz * CS + CS; z++) for (let x = cx * CS; x < cx * CS + CS; x++) {
+    const b = world[(y * D + z) * W + x]; if (!b) continue;
+    const def = BL[b];
+    let tint = NO_TINT;
+    if (def.lock || def.plate) { const L = lockMap.get(key3(x, y, z)); if (L && L.done) tint = DONE_TINT; }
+    for (const f of FACES) {
+      const n = getB(x + f.n[0], y + f.n[1], z + f.n[2]);
+      if (b === B.WATER) { if (n !== B.WATER && !BL[n].opaque) pushFace(w, x, y, z, f, def, NO_TINT); continue; }
+      if (BL[n].opaque) continue;
+      if (n === b && def.alpha) continue;
+      pushFace(o, x, y, z, f, def, tint);
+    }
+  }
+  let c = chunks[ci];
+  if (!c) c = chunks[ci] = { vbo: gl.createBuffer(), wbo: gl.createBuffer(), n: 0, wn: 0 };
+  gl.bindBuffer(gl.ARRAY_BUFFER, c.vbo); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(o), gl.STATIC_DRAW); c.n = o.length / 8;
+  gl.bindBuffer(gl.ARRAY_BUFFER, c.wbo); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(w), gl.STATIC_DRAW); c.wn = w.length / 8;
+}
+function buildAll() { dirty.clear(); for (let i = 0; i < NCX * NCY * NCZ; i++) buildChunk(i); }
+
+// ── Matrices ──
+function persp(fovy, a, n, f) { const t = 1 / Math.tan(fovy / 2), nf = 1 / (n - f); return [t / a, 0, 0, 0, 0, t, 0, 0, 0, 0, (f + n) * nf, -1, 0, 0, 2 * f * n * nf, 0]; }
+function lookAt(e, c) {
+  let zx = e[0] - c[0], zy = e[1] - c[1], zz = e[2] - c[2], l = Math.hypot(zx, zy, zz); zx /= l; zy /= l; zz /= l;
+  let xx = zz, xy = 0, xz = -zx; l = Math.hypot(xx, xz) || 1; xx /= l; xz /= l;   // up = (0,1,0)
+  const yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
+  return [xx, yx, zx, 0, xy, yy, zy, 0, xz, yz, zz, 0, -(xx * e[0] + xy * e[1] + xz * e[2]), -(yx * e[0] + yy * e[1] + yz * e[2]), -(zx * e[0] + zy * e[1] + zz * e[2]), 1];
+}
+function mmul(a, b) { const o = new Array(16); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + j] * b[i * 4 + k]; o[i * 4 + j] = s; } return o; }
+
+// ── Particles (square points, like Minecraft's) ──
+const MAXP = 2500, parts = [];
+const pData = new Float32Array(MAXP * 8);
+let pBuf = null, lineBuf = null;
+if (gl) { pBuf = gl.createBuffer(); lineBuf = gl.createBuffer(); }
+function spawn(x, y, z, vx, vy, vz, life, col, size, grav, solidKill) {
+  if (parts.length >= MAXP) parts.shift();
+  parts.push({ x, y, z, vx, vy, vz, life, max: life, r: col[0], g: col[1], b: col[2], a: col[3] === undefined ? 1 : col[3], size, grav: grav || 0, kill: !!solidKill });
+}
+function burst(x, y, z, n, cols, speed, size) {
+  for (let i = 0; i < n; i++) {
+    const c = cols[Math.floor(Math.random() * cols.length)];
+    spawn(x, y, z, (Math.random() - .5) * speed, Math.random() * speed, (Math.random() - .5) * speed, 0.6 + Math.random() * 0.6, c, size || 0.09, 9);
+  }
+}
+// ════════════════════════════════════════════════════════════════
+// PEOPLE (and some snails)
+// ════════════════════════════════════════════════════════════════
+const rr = (a, b) => a + Math.random() * (b - a);
+const headingTo = (dx, dz) => Math.atan2(dx, -dz);
+const SKINS = [[0.96, 0.8, 0.64], [0.86, 0.66, 0.48], [0.66, 0.46, 0.32], [0.98, 0.86, 0.74], [0.5, 0.34, 0.24]];
+const HAIRS = [[0.25, 0.16, 0.1], [0.1, 0.08, 0.07], [0.55, 0.52, 0.5], [0.5, 0.26, 0.12], [0.8, 0.62, 0.3]];
+const CLOTHES = [[0.2, 0.3, 0.55], [0.55, 0.15, 0.2], [0.25, 0.45, 0.3], [0.5, 0.4, 0.6], [0.7, 0.6, 0.4], [0.3, 0.3, 0.34]];
+let npcs = [], npcBuf = null, critic = null;
+if (gl) npcBuf = gl.createBuffer();
+function person(o) {
+  const n = Object.assign({ kind: 'human', mode: 'idle', path: null, seg: 0, speed: 2, wait: 0, x: 0, y: G, z: 0, h: 0,
+    phase: Math.random() * 6, hidden: false, moving: false, tunic: pick(CLOTHES), skin: pick(SKINS), hair: pick(HAIRS), legs: [0.18, 0.18, 0.22],
+    tile: 34, armsUp: false, sit: false, fixedH: false, say: null, line: 0 }, o);
+  if (n.path) { n.x = n.path[0][0]; n.z = n.path[0][1]; n.h = headingTo(n.path[1][0] - n.x, n.path[1][1] - n.z); }
+  if (n.say) n.line = Math.floor(Math.random() * n.say.length);
+  return n;
+}
+const SNAIL_SAY = [['Je suis Monsieur Lent.', 'I am Mr Slow.'], ['Je ne suis pas sur le menu!', 'I am not on the menu!'], ['Encore moi!', 'Me again!'], ['Je vais aller… lentement.', 'I am going to go… slowly.']];
+function spawnNpcs() {
+  npcs = []; critic = null;
+  const add = o => { const n = person(o); npcs.push(n); return n; };
+  const chef = { tunic: [0.97, 0.97, 0.97], tile: 36, legs: [0.15, 0.15, 0.18], toque: true };
+  add(Object.assign({ name: 'Chef Gaston', x: 21.5, z: 46.5, face: 37, hair: [0.2, 0.13, 0.08], skin: [0.98, 0.8, 0.7], belly: true,
+    say: [['Je suis le chef! Je suis un génie!', 'I am the chef! I am a genius!'], ['Vite, vite! Madame Lagrange va arriver!', 'Quick, quick! Madame Lagrange is going to arrive!'],
+      ['Qui a mangé le beurre? …Ah oui. Moi.', 'Who ate the butter? …Ah yes. Me.'], ['Les clés? J’ai perdu les clés.', 'The keys? I have lost the keys.'],
+      ['Tu vas finir la salade, oui?', 'You are going to finish the salad, yes?']] }, chef));
+  add(Object.assign({ name: 'Brigitte', x: 51.5, z: 46.5, hair: [0.55, 0.22, 0.08], longHair: true,
+    say: [['Le cassoulet, c’est la vie!', 'Cassoulet is life!'], ['Ne touche pas mon canard!', 'Don’t touch my duck!'], ['Tu vas finir les haricots?', 'Are you going to finish the beans?'],
+      ['Nous allons manger à minuit!', 'We are going to eat at midnight!']] }, chef));
+  add(Object.assign({ name: 'Monsieur Profiterole', mode: 'loop', path: [[72.5, 45.5], [86.5, 45.5]], speed: 1.4, hair: [0.1, 0.08, 0.07], face: 37,
+    say: [['Je suis un artiste!', 'I am an artist!'], ['Un éclair sans chocolat? Jamais!', 'An éclair without chocolate? Never!'], ['Le four est mon ami.', 'The oven is my friend.'],
+      ['Ne regarde pas mes éclairs!', 'Don’t look at my éclairs!']] }, chef));
+  // Monsieur Lent somehow gets into every room first
+  [[[12.5, 39.6], [27, 39.6], [27, 46], [12.5, 46]], [[42.5, 39.6], [56.5, 39.6], [56.5, 44.5], [42.5, 44.5]], [[72.5, 58.5], [88, 58.5]], [[96.5, 44.5], [108.5, 44.5]]].forEach(path =>
+    add({ kind: 'snail', name: 'Monsieur Lent', mode: 'loop', path, speed: 0.35, say: SNAIL_SAY }));
+  // the dining room
+  const DINER = [['Où est mon cassoulet?', 'Where is my cassoulet?'], ['J’ai faim!', 'I am hungry!'], ['Garçon! Garçon!', 'Waiter! Waiter!'],
+    ['C’est un scandale!', 'It is a scandal!'], ['Le service est lent… comme l’escargot.', 'The service is slow… like the snail.'], ['Nous allons manger à minuit!', 'We are going to eat at midnight!']];
+  [[98, 39], [98, 57], [105, 39], [105, 57]].forEach(([x, z]) => {
+    add({ x: x - 0.5, z: z + 0.5, h: Math.PI / 2, fixedH: true, sit: true, drop: -0.9, say: DINER, armsUp: Math.random() < 0.3 });
+    add({ x: x + 2.5, z: z + 1.5, h: -Math.PI / 2, fixedH: true, sit: true, drop: -0.9, say: DINER });
+  });
+  add({ name: 'Jacques', mode: 'loop', path: [[97.5, 45.5], [108.5, 45.5], [108.5, 51.5], [97.5, 51.5]], speed: 2.4, tunic: [0.1, 0.1, 0.12], tile: 36, legs: [0.1, 0.1, 0.12], moustache: true,
+    say: [['Bonsoir!', 'Good evening!'], ['Le chef? Il est… occupé.', 'The chef? He is… busy.'], ['Ça arrive, ça arrive!', 'It’s coming, it’s coming!']] });
+  critic = add({ name: 'Madame Lagrange', x: 105.5, z: 48.5, h: -Math.PI / 2, fixedH: true, sit: true, drop: -0.9, tunic: [0.42, 0.1, 0.38], hair: [0.75, 0.75, 0.78], skin: [0.98, 0.86, 0.76],
+    longHair: true, glasses: true, critic: true,
+    say: [['Hmm.', 'Hmm.'], ['J’ai faim. Très faim.', 'I am hungry. Very hungry.'], ['Je vais écrire mon article…', 'I am going to write my article…'], ['Vous avez fini? Non?', 'Have you finished? No?']] });
+}
+function turnTo(n, h, dt, rate) { let d = h - n.h; d = Math.atan2(Math.sin(d), Math.cos(d)); n.h += d * Math.min(1, dt * rate); }
+function settleY(n, dt) {
+  const fx = Math.floor(n.x), fz = Math.floor(n.z), fy = Math.floor(n.y + 0.01);
+  const s = y => BL[getB(fx, y, fz)].solid;
+  let ty = n.y;
+  if (s(fy)) { if (!s(fy + 1)) ty = fy + 1; }
+  else { let y = fy - 1; while (y > fy - 6 && !s(y)) y--; if (s(y)) ty = y + 1; }
+  if (n.kind === 'snail') ty = G;            // snails slide along the floor, under everything
+  n.y += (ty - n.y) * Math.min(1, dt * 14);
+}
+function npcStep(n, dt) {
+  if (n.mode === 'idle') {
+    n.moving = false; n.phase += dt * 3;
+    if (!n.fixedH && game && Math.hypot(P.x - n.x, P.z - n.z) < 8) turnTo(n, headingTo(P.x - n.x, P.z - n.z), dt, 4);
+    settleY(n, dt); return;
+  }
+  const p = n.path, tgt = p[(n.seg + 1) % p.length];
+  const dx = tgt[0] - n.x, dz = tgt[1] - n.z, d = Math.hypot(dx, dz), step = n.speed * dt;
+  if (d > 1e-4) turnTo(n, headingTo(dx, dz), dt, n.kind === 'snail' ? 2 : 10);
+  if (d <= step) { n.x = tgt[0]; n.z = tgt[1]; n.seg = (n.seg + 1) % p.length; }
+  else { n.x += dx / d * step; n.z += dz / d * step; }
+  n.moving = true; n.phase += dt * n.speed * 2.2;
+  settleY(n, dt);
+}
+
+// ── Drawing: every body part is a coloured box ──
+const BOX_F = [[[4, 5, 7, 6], 0.92], [[1, 0, 2, 3], 0.86], [[5, 1, 3, 7], 0.74], [[0, 4, 6, 2], 0.74], [[6, 7, 3, 2], 1.0], [[0, 1, 5, 4], 0.55]];
+const nv = [];
+function nbox(n, cx, cy, cz, sx, sy, sz, col, tile, front, piv, rx, ry) {
+  const sh = Math.sin(n.h), ch = Math.cos(n.h), pts = [], k = n.scale || 1;
+  if (k !== 1) { cx *= k; cy *= k; cz *= k; sx *= k; sy *= k; sz *= k; if (piv) piv = [piv[0] * k, piv[1] * k]; }
+  for (let i = 0; i < 8; i++) {
+    let lx = cx + (i & 1 ? sx : -sx) / 2, ly = cy + (i & 2 ? sy : -sy) / 2, lz = cz + (i & 4 ? sz : -sz) / 2;
+    if (rx) { const dy = ly - piv[0], dz = lz - piv[1], c = Math.cos(rx), s = Math.sin(rx); ly = piv[0] + c * dy - s * dz; lz = piv[1] + s * dy + c * dz; }
+    if (ry) { const dz = lz - piv[1], c = Math.cos(ry), s = Math.sin(ry), x0 = lx; lx = c * x0 - s * dz; lz = piv[1] + s * x0 + c * dz; }
+    pts.push([n.x + ch * lx + sh * lz, n.y + ly, n.z + sh * lx - ch * lz]);
+  }
+  BOX_F.forEach(([ci, shade], fi) => {
+    const t = fi === 0 && front != null ? front : tile;
+    const u0 = (t % 16) / 16 + 0.002, v0 = Math.floor(t / 16) / 16 + 0.002, u1 = u0 + 1 / 16 - 0.004, v1 = v0 + 1 / 16 - 0.004;
+    const uv = [[u0, v1], [u1, v1], [u1, v0], [u0, v0]];
+    for (const k of [0, 1, 2, 0, 2, 3]) { const p = pts[ci[k]]; nv.push(p[0], p[1], p[2], uv[k][0], uv[k][1], col[0] * shade, col[1] * shade, col[2] * shade); }
+  });
+}
+function drawHuman(n) {
+  const run = n.moving ? Math.sin(n.phase) : 0;
+  const drop = n.sit ? (n.drop || -0.45) : 0, b = (n.moving ? Math.abs(Math.cos(n.phase)) * 0.07 : 0) + drop;
+  const legA = n.sit ? -1.45 : run * 0.55;
+  let armL, armR;
+  if (n.armsUp) { const w = Math.sin(n.phase * 1.6) * 0.35; armL = -2.75 + w; armR = -2.75 - w; }
+  else if (n.moving) { armL = -run * 0.6; armR = run * 0.6; }
+  else armL = armR = Math.sin(n.phase) * 0.04;
+  const W0 = n.belly ? 0.64 : 0.52;
+  nbox(n, -0.12, 0.375 + drop, 0, 0.2, 0.75, 0.22, n.legs, 34, null, [0.75 + drop, 0], legA);
+  nbox(n, 0.12, 0.375 + drop, 0, 0.2, 0.75, 0.22, n.legs, 34, null, [0.75 + drop, 0], n.sit ? legA : -legA);
+  nbox(n, 0, 1.0 + b, n.belly ? 0.04 : 0, W0, 0.72, n.belly ? 0.42 : 0.3, n.tunic, n.tile);
+  nbox(n, -W0 / 2 - 0.09, 1.03 + b, 0, 0.17, 0.6, 0.17, n.tunic, 34, null, [1.3 + b, 0], armL);
+  nbox(n, W0 / 2 + 0.09, 1.03 + b, 0, 0.17, 0.6, 0.17, n.tunic, 34, null, [1.3 + b, 0], armR);
+  nbox(n, 0, 1.58 + b, 0, 0.44, 0.44, 0.44, n.skin, 34, n.face || 35);
+  nbox(n, 0, 1.83 + b, -0.02, 0.47, 0.08, 0.48, n.hair, 34);
+  nbox(n, 0, n.longHair ? 1.5 + b : 1.62 + b, -0.215, 0.47, n.longHair ? 0.6 : 0.38, 0.06, n.hair, 34);
+  if (n.toque) { nbox(n, 0, 1.92 + b, 0, 0.46, 0.12, 0.46, [0.98, 0.98, 0.98], 34); nbox(n, 0, 2.17 + b, 0, 0.58, 0.4, 0.58, [1, 1, 1], 34); }
+  if (n.moustache) nbox(n, 0, 1.5 + b, 0.225, 0.36, 0.06, 0.03, [0.15, 0.1, 0.06], 34);
+  if (n.glasses) nbox(n, 0, 1.62 + b, 0.225, 0.4, 0.08, 0.03, [0.1, 0.1, 0.1], 34);
+  if (n.critic) nbox(n, 0, 1.9 + b, 0, 0.62, 0.06, 0.62, [0.42, 0.1, 0.38], 34);     // a large hat
+}
+function drawSnail(n) {
+  const wob = n.moving ? Math.sin(n.phase * 3) * 0.02 : 0;
+  nbox(n, 0, 0.06, 0.05 + wob, 0.2, 0.12, 0.6, [0.72, 0.66, 0.5], 34);                 // body
+  nbox(n, 0, 0.16, 0.32, 0.16, 0.16, 0.12, [0.72, 0.66, 0.5], 34, 35);                // head
+  nbox(n, -0.05, 0.3, 0.33, 0.03, 0.14, 0.03, [0.6, 0.54, 0.4], 34); nbox(n, 0.05, 0.3, 0.33, 0.03, 0.14, 0.03, [0.6, 0.54, 0.4], 34);
+  nbox(n, 0, 0.3, -0.06, 0.24, 0.32, 0.34, [0.62, 0.36, 0.18], 34);                   // shell
+  nbox(n, 0, 0.32, -0.06, 0.26, 0.16, 0.18, [0.8, 0.52, 0.26], 34);
+  nbox(n, 0, 0.5, 0.05, 0.12, 0.04, 0.12, [0.15, 0.1, 0.06], 34);                    // a tiny beret
+}
+function drawNpcs(eye) {
+  nv.length = 0;
+  for (const n of npcs) {
+    if (n.hidden || Math.abs(n.x - eye[0]) + Math.abs(n.z - eye[2]) > 70) continue;
+    if (n.kind === 'snail') drawSnail(n); else drawHuman(n);
+  }
+  return nv.length / 8;
+}
+// ── Speech bubble over the nearest person ──
+let sayN = null, sayT = 0;
+function updateSay(mvp, eye, dt) {
+  const el = $('say'), m = mvp;
+  if (mode !== 'play') { el.style.display = 'none'; sayN = null; return; }
+  // The nearest person you can actually see gets the bubble
+  const near = npcs.filter(n => !n.hidden && n.say && Math.hypot(n.x - P.x, n.y - P.y, n.z - P.z) < 7 * (n.scale || 1))
+    .sort((a, b) => Math.hypot(a.x - P.x, a.z - P.z) - Math.hypot(b.x - P.x, b.z - P.z));
+  let best = null, sx = 0, sy = 0;
+  for (const n of near) {
+    const hx = n.x, hy = n.y + (n.kind === 'snail' ? 0.9 : (n.sit ? 1.75 : 2.2) * (n.scale || 1)), hz = n.z;
+    const cw = m[3] * hx + m[7] * hy + m[11] * hz + m[15];
+    if (cw < 0.2) continue;
+    const cx = (m[0] * hx + m[4] * hy + m[8] * hz + m[12]) / cw, cy = (m[1] * hx + m[5] * hy + m[9] * hz + m[13]) / cw;
+    if (Math.abs(cx) > 0.95 || cy > 0.95 || cy < -0.9) continue;
+    const dx = hx - eye[0], dy = hy - 0.5 - eye[1], dz = hz - eye[2], dl = Math.hypot(dx, dy, dz);
+    const hit = raycast(eye[0], eye[1], eye[2], dx / dl, dy / dl, dz / dl, dl);
+    if (hit && Math.hypot(hit.x + .5 - eye[0], hit.y + .5 - eye[1], hit.z + .5 - eye[2]) < dl - 0.9) continue;
+    best = n; sx = cx; sy = cy; break;
+  }
+  if (!best) { el.style.display = 'none'; sayN = null; return; }
+  if (best !== sayN) { sayN = best; sayT = 3.5; }
+  else if ((sayT -= dt) < 0) { sayT = 3.5; best.line = (best.line + 1) % best.say.length; }
+  const [l, e] = best.say[best.line];
+  if ($('sayL').textContent !== l) { $('sayL').textContent = l; $('sayE').textContent = e; }
+  el.style.display = 'block';
+  el.style.left = ((sx * 0.5 + 0.5) * innerWidth) + 'px';
+  el.style.top = ((0.5 - sy * 0.5) * innerHeight - 6) + 'px';
+}
+function followStep() {}
+
+// ════════════════════════════════════════════════════════════════
+// AUDIO — small synthesised effects
+// ════════════════════════════════════════════════════════════════
+let AC = null, noiseBuf = null;
+function initAudio() {
+  if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    noiseBuf = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  } catch (e) { AC = null; }
+}
+function tone(freq, dur, type, vol, slide, delay) {
+  if (!AC) return; const t = AC.currentTime + (delay || 0);
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type || 'square'; o.frequency.setValueAtTime(freq, t); if (slide) o.frequency.linearRampToValueAtTime(freq + slide, t + dur);
+  g.gain.setValueAtTime(vol || 0.06, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+function noise(dur, vol, freq, delay) {
+  if (!AC) return; const t = AC.currentTime + (delay || 0);
+  const s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  s.buffer = noiseBuf; f.type = 'lowpass'; f.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  s.connect(f); f.connect(g); g.connect(AC.destination); s.start(t); s.stop(t + dur + 0.05);
+}
+const sfx = {
+  click: () => tone(700, 0.05, 'square', 0.03),
+  right: () => { tone(523, 0.1, 'square', 0.05); tone(659, 0.1, 'square', 0.05, 0, 0.09); tone(784, 0.22, 'square', 0.05, 0, 0.18); },
+  wrong: () => { tone(220, 0.16, 'sawtooth', 0.05, -40); tone(160, 0.3, 'sawtooth', 0.05, -60, 0.16); },
+  unlock: () => { noise(0.12, 0.25, 900); tone(880, 0.12, 'triangle', 0.08, 0, 0.08); tone(1318, 0.3, 'triangle', 0.08, 0, 0.18); },
+  gate: () => { noise(0.18, 0.25, 260); tone(90, 0.15, 'sawtooth', 0.04, -20); },
+  sizzle: () => { noise(1.4, 0.16, 3000); noise(1.0, 0.1, 6000, 0.3); },
+  step: () => noise(0.05, 0.03, 1400),
+  pop: () => tone(620, 0.08, 'triangle', 0.06, 300),
+  // a few bars of something accordion-ish
+  win: () => [392, 523, 659, 784, 659, 784, 1046].forEach((f, i) => { tone(f, 0.24, 'square', 0.04, 0, i * 0.14); tone(f / 2, 0.24, 'triangle', 0.04, 0, i * 0.14); }),
+  ohlala: () => [880, 784, 659].forEach((f, i) => tone(f, 0.18, 'triangle', 0.06, -20, i * 0.16)),
+};
+
+// ════════════════════════════════════════════════════════════════
+// GAME STATE
+// ════════════════════════════════════════════════════════════════
+let mode = 'title';          // title | story | play | pause | question | note | win
+let game = null, cur = null;
+const P = { x: START.x, y: G, z: START.z, vx: 0, vy: 0, vz: 0, yaw: START.yaw, pitch: 0, onGround: false };
+const keys = {};
+const touch = { on: false, jx: 0, jy: 0, jid: null, lid: null, lx: 0, ly: 0, jump: false };
+let stepT = 0, sparkT = 0, steamT = 0, toastT = null, splashT = null, shake = 0;
+let target = null;
+let isTouch = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+function setTouch(on) { isTouch = on; document.body.classList.toggle('touch', on); }
+setTouch(isTouch);
+window.addEventListener('touchstart', () => { if (!isTouch) setTouch(true); }, { passive: true, capture: true });
+
+function roomAt(x) { for (let r = 0; r < 4; r++) if (x < RX[r + 1]) return r; return 3; }
+const lockName = L => STORE_NAME[COURSES[L.room].items[L.k][2]];
+
+function newGame() {
+  $('loading').textContent = 'Chef Gaston is sharpening his knives…';
+  $('loading').classList.add('on');
+  setTimeout(() => {
+    generateWorld(); buildAll();
+    game = { qs: buildQuestions(30), results: new Array(30).fill(null), got: [0, 0, 0], cooked: [false, false, false], score: 0, visited: new Set(), t0: 0, served: false, snailPats: 0 };
+    Object.assign(P, { x: START.x, y: G, z: START.z, vx: 0, vy: 0, vz: 0, yaw: START.yaw, pitch: -0.05 });
+    parts.length = 0;
+    spawnNpcs();
+    buildHotbar(0); updateHud();
+    $('loading').classList.remove('on');
+    show('sStory'); mode = 'story';
+  }, 30);
+}
+function show(id) {
+  ['sTitle', 'sStory', 'sPause', 'sQ', 'sWin'].forEach(s => $(s).classList.toggle('on', s === id));
+  const playing = !id || id === 'sQ' || id === 'sPause';
+  $('hud').classList.toggle('on', !!game && playing);
+  $('touch').classList.toggle('on', !id);
+}
+function enterPlay() {
+  mode = 'play'; show(null);
+  if (!isTouch && canvas.requestPointerLock && document.pointerLockElement !== canvas) {
+    try { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+  }
+}
+function placeName(r) { return r === 3 ? 'La salle à manger (the dining room)' : `${ROMAN[r]} · ${COURSES[r].name}: ${COURSES[r].dish}`; }
+function pauseGame() {
+  if (mode !== 'play') return;
+  mode = 'pause';
+  $('pauseInfo').textContent = `You are in ${placeName(roomAt(P.x))}. Ingredients found: ${game.got.reduce((a, b) => a + b, 0)} of 30. Right first time: ${game.score}.`;
+  show('sPause');
+}
+
+// ── HUD ──
+let hotbarRoom = -1;
+function buildHotbar(r) {
+  hotbarRoom = r;
+  $('hotbar').innerHTML = COURSES[r].items.map((it, i) => `<div class="hslot" id="hs${i}" title="${esc(it[0])}"><img src="${ICONS[it[3]]}" alt=""></div>`).join('');
+}
+function updateHud() {
+  if (!game) return;
+  const here = roomAt(P.x);
+  const r = Math.min(2, here);
+  if (here < 3 && hotbarRoom !== here) buildHotbar(here);
+  let name, goal, hint = '';
+  if (here === 3) {
+    name = 'La salle à manger (the dining room)';
+    goal = game.cooked.every(Boolean) ? 'Serve Madame Lagrange: talk to her at the middle table.' : 'Madame Lagrange is waiting. The dishes are not ready!';
+  } else {
+    const c = COURSES[here];
+    name = `${ROMAN[here]} · ${c.name}: ${c.dish}`;
+    const n = game.got[here];
+    if (game.cooked[here]) goal = here < 2 ? 'Fini! The door is open. Go on →' : 'Fini! Go through to the dining room →';
+    else if (n < 10) { goal = `Ingredients: ${n} of 10`; hint = 'Look for ✦ golden sparkles on fridges, jars, sacks and drawers.'; }
+    else { goal = `All 10 ingredients! ${c.cook}: use ${c.stationName} on the middle counter.`; }
+  }
+  if ($('roomName').textContent !== name) $('roomName').textContent = name;
+  if ($('roomGoal').textContent !== goal) $('roomGoal').textContent = goal;
+  if ($('roomHint').textContent !== hint) $('roomHint').textContent = hint;
+  $('scoreN').textContent = game.score;
+  if (here < 3) for (let i = 0; i < 10; i++) {
+    const L = LOCKS.find(L => L.room === here && L.k === i);
+    $('hs' + i).classList.toggle('has', !!(L && L.done));
+  }
+}
+function toast(html, ms) {
+  const t = $('toast'); t.innerHTML = html; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), ms || 2600);
+}
+function showSplash(n, t, l, i) {
+  $('spN').textContent = n; $('spT').textContent = t; $('spL').textContent = l; $('spI').textContent = i;
+  const s = $('splashR'); s.classList.add('show');
+  clearTimeout(splashT); splashT = setTimeout(() => s.classList.remove('show'), 4200);
+}
+function roomSplash(r) {
+  if (r === 3) return showSplash('LA SALLE À MANGER', 'Madame Lagrange', 'the most feared critic in Paris', 'Serve her the three courses. Bonne chance.');
+  const c = COURSES[r];
+  showSplash(['PREMIÈRE', 'DEUXIÈME', 'TROISIÈME'][r] + ' CUISINE', c.name, c.dish, c.intro);
+}
+
+// ════════════════════════════════════════════════════════════════
+// PLAYER
+// ════════════════════════════════════════════════════════════════
+const PR = 0.3, PH = 1.8, EYE = 1.62;
+function collides(px, py, pz) {
+  for (let y = Math.floor(py); y <= Math.floor(py + PH - 1e-4); y++)
+    for (let z = Math.floor(pz - PR); z <= Math.floor(pz + PR - 1e-4); z++)
+      for (let x = Math.floor(px - PR); x <= Math.floor(px + PR - 1e-4); x++)
+        if (BL[getB(x, y, z)].solid) return true;
+  return false;
+}
+function updatePlayer(dt) {
+  let fx = 0, fz = 0;
+  if (keys.KeyW || keys.ArrowUp) fz += 1;
+  if (keys.KeyS || keys.ArrowDown) fz -= 1;
+  if (keys.KeyD || keys.ArrowRight) fx += 1;
+  if (keys.KeyA || keys.ArrowLeft) fx -= 1;
+  if (touch.on) { fx += touch.jx; fz -= touch.jy; }
+  const len = Math.hypot(fx, fz); if (len > 1) { fx /= len; fz /= len; }
+  const sy = Math.sin(P.yaw), cy = Math.cos(P.yaw);
+  const run = keys.ShiftLeft || keys.ShiftRight;
+  const sp = run ? 6.4 : 4.4;
+  const tx = (sy * fz + cy * fx) * sp, tz = (-cy * fz + sy * fx) * sp;
+  const k = Math.min(1, dt * (P.onGround ? 14 : 4));
+  P.vx += (tx - P.vx) * k; P.vz += (tz - P.vz) * k;
+  const inWater = getB(Math.floor(P.x), Math.floor(P.y + 0.2), Math.floor(P.z)) === B.WATER;
+  P.vy -= (inWater ? 12 : 28) * dt;
+  if (inWater) P.vy = Math.max(P.vy, -3);
+  if ((keys.Space || touch.jump) && (P.onGround || inWater)) P.vy = inWater ? 4 : 8.6;
+
+  let hit = false;
+  let nx = P.x + P.vx * dt;
+  if (collides(nx, P.y, P.z)) { hit = true; nx = P.vx > 0 ? Math.floor(nx + PR) - PR - 0.001 : Math.floor(nx - PR) + 1 + PR + 0.001; if (collides(nx, P.y, P.z)) nx = P.x; P.vx = 0; }
+  P.x = nx;
+  let nzv = P.z + P.vz * dt;
+  if (collides(P.x, P.y, nzv)) { hit = true; nzv = P.vz > 0 ? Math.floor(nzv + PR) - PR - 0.001 : Math.floor(nzv - PR) + 1 + PR + 0.001; if (collides(P.x, P.y, nzv)) nzv = P.z; P.vz = 0; }
+  P.z = nzv;
+  const wasGround = P.onGround;
+  let ny = P.y + P.vy * dt; P.onGround = false;
+  if (collides(P.x, ny, P.z)) {
+    if (P.vy < 0) { ny = Math.floor(ny) + 1; P.onGround = true; } else ny = Math.floor(ny + PH) - PH - 0.001;
+    if (collides(P.x, ny, P.z)) ny = P.y;
+    P.vy = 0;
+  }
+  P.y = ny;
+  // Auto-jump onto one-block steps
+  if (hit && wasGround && len > 0.1) {
+    const ax = P.x + (sy * fz + cy * fx) * 0.45, az = P.z + (-cy * fz + sy * fx) * 0.45;
+    if (collides(ax, P.y + 0.1, az) && !collides(ax, P.y + 1.05, az) && !collides(P.x, P.y + 1.05, P.z)) P.vy = 8.6;
+  }
+  if (P.y < -10) Object.assign(P, { x: START.x, y: G, z: START.z, vy: 0 });
+  if (P.onGround && Math.hypot(P.vx, P.vz) > 1) { stepT -= dt * Math.hypot(P.vx, P.vz); if (stepT < 0) { stepT = 1.9; sfx.step(); } }
+}
+
+// ── Voxel raycast (Amanatides–Woo) ──
+function raycast(ox, oy, oz, dx, dy, dz, maxD) {
+  let x = Math.floor(ox), y = Math.floor(oy), z = Math.floor(oz);
+  const sx = Math.sign(dx), sy = Math.sign(dy), sz = Math.sign(dz);
+  const tdx = dx ? Math.abs(1 / dx) : Infinity, tdy = dy ? Math.abs(1 / dy) : Infinity, tdz = dz ? Math.abs(1 / dz) : Infinity;
+  let tmx = dx ? (dx > 0 ? x + 1 - ox : ox - x) * tdx : Infinity;
+  let tmy = dy ? (dy > 0 ? y + 1 - oy : oy - y) * tdy : Infinity;
+  let tmz = dz ? (dz > 0 ? z + 1 - oz : oz - z) * tdz : Infinity;
+  let t = 0;
+  while (t <= maxD) {
+    const b = getB(x, y, z);
+    if (b && b !== B.WATER) return { x, y, z, b };
+    if (tmx < tmy && tmx < tmz) { x += sx; t = tmx; tmx += tdx; }
+    else if (tmy < tmz) { y += sy; t = tmy; tmy += tdy; }
+    else { z += sz; t = tmz; tmz += tdz; }
+  }
+  return null;
+}
+function lookDir() { const cp = Math.cos(P.pitch); return [Math.sin(P.yaw) * cp, Math.sin(P.pitch), -Math.cos(P.yaw) * cp]; }
+
+// The person in front of you, if they are closer than the block you are looking at
+function npcTarget(d, blockDist) {
+  let best = null, bd = 99;
+  for (const n of npcs) {
+    if (n.hidden) continue;
+    const k = n.scale || 1, hx = n.x - P.x, hy = n.y + (n.kind === 'snail' ? 0.3 : 1.1) * k - (P.y + EYE), hz = n.z - P.z, dist = Math.hypot(hx, hy, hz);
+    if (dist > 3.2 + k || dist > blockDist + 0.6) continue;
+    const dot = (hx * d[0] + hy * d[1] + hz * d[2]) / dist;
+    if (dot < Math.cos(Math.atan2(0.55 * k, dist))) continue;
+    if (dist < bd) { bd = dist; best = n; }
+  }
+  return best;
+}
+function updateTarget() {
+  const d = lookDir();
+  target = raycast(P.x, P.y + EYE, P.z, d[0], d[1], d[2], 5);
+  const td = target ? Math.hypot(target.x + .5 - P.x, target.y + .5 - P.y - EYE, target.z + .5 - P.z) : 99;
+  const tn = npcTarget(d, td);
+  let msg = '';
+  const verb = isTouch ? 'Tap USE' : 'Press E';
+  if (tn) {
+    target = { npc: tn };
+    if (tn === critic && game.cooked.every(Boolean)) msg = `${verb} to serve Madame Lagrange`;
+    else if (tn.kind === 'snail') msg = `${verb} to talk to Monsieur Lent (a snail)`;
+    else msg = `${verb} to talk to ${tn.name || 'this diner'}`;
+    $('actionbar').textContent = msg;
+    return;
+  }
+  if (target) {
+    const k = key3(target.x, target.y, target.z);
+    const L = lockMap.get(k);
+    const st = STATIONS.find(S => S && S.x === target.x && S.y === target.y && S.z === target.z);
+    if (L) { const it = COURSES[L.room].items[L.k]; msg = L.done ? `Empty. You took ${it[0]} (${it[1]}).` : `${verb} to open ${lockName(L)}`; }
+    else if (st) msg = game.cooked[st.r] ? 'Cooked! Délicieux.' : game.got[st.r] < 10 ? `${COURSES[st.r].stationName}: you need all 10 ingredients first (${game.got[st.r]} of 10).` : `${verb}: ${COURSES[st.r].cook}!`;
+    else if (gateMap.has(k)) { const r = gateMap.get(k); msg = `Locked. Cook ${COURSES[r].dish} first.`; }
+    else if (NOTES.has(k)) msg = `${verb} to read this`;
+    else if (target.b === B.STOVE || target.b === B.FIRE) msg = 'Chaud! Hot!';
+  }
+  $('actionbar').textContent = msg;
+}
+function interact() {
+  if (mode !== 'play' || !target) return;
+  if (target.npc) {
+    const n = target.npc;
+    if (n === critic && game.cooked.every(Boolean)) return serveCritic();
+    if (n.kind === 'snail' && ++game.snailPats === 5) { sfx.ohlala(); toast('<span class="gold">Monsieur Lent vous aime!</span><br>The snail loves you. He will not be on the menu tonight.', 3600); return; }
+    if (n.say) { n.line = (n.line + 1) % n.say.length; const [l, e] = n.say[n.line]; sfx.click(); toast(`<span class="gold">${esc(n.name ? n.name + ': ' : '')}${esc(l)}</span><br>${esc(e)}`, 3200); }
+    return;
+  }
+  const k = key3(target.x, target.y, target.z);
+  const L = lockMap.get(k);
+  const st = STATIONS.find(S => S && S.x === target.x && S.y === target.y && S.z === target.z);
+  if (L && !L.done) openQuestion(L);
+  else if (st && !game.cooked[st.r] && game.got[st.r] >= 10) cook(st.r);
+  else if (st && !game.cooked[st.r]) { sfx.wrong(); toast(`<span class="gold">Pas encore!</span><br>Not yet! You have ${game.got[st.r]} of 10 ingredients.`); }
+  else if (NOTES.has(k)) openNote(NOTES.get(k));
+  else if (gateMap.has(k)) sfx.wrong();
+}
+function openNote(N) {
+  mode = 'note';
+  if (document.pointerLockElement) document.exitPointerLock();
+  keys.KeyW = keys.KeyA = keys.KeyS = keys.KeyD = false;
+  sfx.click();
+  $('qPanel').innerHTML = `<div class="q-head"><span>Something to read</span><span class="nm">${esc(N.title)}</span></div>` +
+    `<div class="q-fr">${esc(N.fr)}</div><div class="q-en">${esc(N.en)}</div><div class="note-about">${esc(N.about)}</div>` +
+    `<div class="q-done show"><button class="mc-btn big" id="noteClose">Back to the kitchen ▶</button></div>`;
+  show('sQ'); $('sQ').scrollTop = 0;
+  setTimeout(() => { const b = $('noteClose'); if (b) b.focus({ preventScroll: true }); }, 50);
+}
+function closeNote() { sfx.click(); enterPlay(); }
+
+// ── Opening a store, cooking, opening doors ──
+function unlock(L) {
+  L.done = true;
+  sfx.unlock();
+  markDirty(L.x, L.y, L.z);
+  burst(L.x + .5, L.y + .5, L.z + .5, 50, [[1, .85, .25], [.5, 1, .45], [1, 1, .7]], 5, 0.1);
+  game.got[L.room]++;
+  const n = game.got[L.room], it = COURSES[L.room].items[L.k];
+  updateHud();
+  if (n < 10) toast(`<span class="gold">+ ${esc(it[0])}</span><br>${esc(it[1])} · ${n} of 10`);
+  else toast(`<span class="gold">Les dix ingrédients!</span><br>All ten! Now ${COURSES[L.room].cook.toLowerCase()}: use ${COURSES[L.room].stationName}.`, 4200);
+}
+function cook(r) {
+  game.cooked[r] = true;
+  const S = STATIONS[r];
+  sfx.sizzle(); setTimeout(() => sfx.right(), 900);
+  for (let i = 0; i < 6; i++) setTimeout(() => burst(S.x + .5, S.y + 1, S.z + .5, 30, [[1, 1, 1, .8], [.9, .9, .9, .7], [1, .8, .3]], 3, 0.14), i * 180);
+  const x1 = RX[r + 1];
+  setB(x1 - 3, G + 1, 44, [B.DISH1, B.DISH2, B.DISH3][r]);
+  toast(COURSES[r].done, 4600);
+  setTimeout(() => openGate(r), 900);
+  updateHud();
+}
+function openGate(r) {
+  const rows = {};
+  GATES[r].forEach(p => { (rows[p[1]] = rows[p[1]] || []).push(p); });
+  Object.keys(rows).map(Number).sort((a, b) => a - b).forEach((y, i) => setTimeout(() => {
+    rows[y].forEach(([x, yy, z]) => { setB(x, yy, z, B.AIR); gateMap.delete(key3(x, yy, z)); burst(x + .5, yy + .5, z + .5, 10, [[.55, .36, .2], [.4, .26, .14], [.7, .6, .3]], 3, 0.12); });
+    sfx.gate(); shake = Math.max(shake, 0.1);
+  }, i * 260));
+}
+function serveCritic() {
+  if (game.served) return;
+  game.served = true; mode = 'serving';
+  if (document.pointerLockElement) document.exitPointerLock();
+  [[104, 48, B.DISH1], [104, 47, B.DISH2], [103, 48, B.DISH3]].forEach(([x, z, b], i) => setTimeout(() => { setB(x, G + 1, z, b); sfx.pop(); burst(x + .5, G + 1.3, z + .5, 14, [[1, 1, 1, .8]], 2, 0.1); }, i * 500));
+  critic.say = [['Mmm…', 'Mmm…']]; critic.line = 0;
+  toast('<span class="gold">Madame Lagrange goûte…</span><br>Madame Lagrange is tasting…', 3000);
+  setTimeout(winGame, 3200);
+}
+
+// ════════════════════════════════════════════════════════════════
+// QUESTIONS
+// ════════════════════════════════════════════════════════════════
+const ACCENTS = ['é', 'è', 'ê', 'ë', 'à', 'â', 'ç', 'î', 'ï', 'ô', 'û', 'ù'];
+const TENSE_NAME = { pres: 'le présent (present)', pc: 'le passé composé (perfect)', fut: 'le futur proche (near future)' };
+function maxAttempts(q) { return q.type === 'typed' ? 3 : 2; }
+function openQuestion(L) {
+  const idx = L.room * 10 + L.k, q = game.qs[idx];
+  cur = { L, idx, q, attempts: 0, answered: false, peeked: false };
+  mode = 'question';
+  if (document.pointerLockElement) document.exitPointerLock();
+  keys.KeyW = keys.KeyA = keys.KeyS = keys.KeyD = false;
+  sfx.click();
+  renderQuestion();
+  show('sQ'); $('sQ').scrollTop = 0;
+  setTimeout(() => { const i = $('qInput'); if (i) i.focus({ preventScroll: true }); }, 60);
+}
+function questionBody(q) {
+  const who = q.subj !== PERSONS[q.i].fr ? `<div class="q-who">Who? <b>${esc(q.subj)}</b></div>` : '';
+  const tense = `<span class="q-tense">${TENSE_NAME[q.tense]}</span>`;
+  if (q.type === 'form') return `<div class="q-fr"><span class="subj">${esc(q.subj)}</span> + <span class="inf">${esc(q.v.inf)}</span></div><div class="q-en">to ${esc(q.v.en[0])} · ${tense}</div>`;
+  if (q.type === 'fr2en') return `<div class="q-fr">${esc(q.answer)}</div><div class="q-en">${tense}</div>`;
+  return `<div class="q-fr en">${esc(q.en)}</div><div class="q-en">verb: <b>${esc(q.v.inf)}</b> (to ${esc(q.v.en[0])}) · ${tense}</div>${who}`;
+}
+function renderQuestion() {
+  const q = cur.q, c = COURSES[cur.L.room], it = c.items[cur.L.k], max = maxAttempts(q);
+  let h = `<div class="q-head"><span>${esc(c.name)} · ${esc(lockName(cur.L))}</span><span class="nm"><img class="q-ic" src="${ICONS[it[3]]}" alt=""> ${esc(it[0])} (${esc(it[1])})</span></div>`;
+  h += `<div class="q-task">${esc(q.prompt)}</div>` + questionBody(q);
+  h += `<div class="q-meta"><div class="dots">Tries: ${Array.from({ length: max }, (_, a) => `<span class="dot" id="qd${a}"></span>`).join('')}</div>` +
+    `<button class="mc-btn small" id="qHelp">📖 Show the verb table</button></div>`;
+  h += `<div class="gtable" id="qTable"></div>`;
+  if (q.opts) h += `<div class="choices">${q.opts.map((o, i) => `<button class="mc-btn choice${q.type === 'fr2en' ? '' : ' fr'}" data-opt="${i}"><span class="k">${i + 1}</span><span>${esc(o.text)}</span></button>`).join('')}</div>`;
+  else h += `<div class="typed"><input id="qInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the French here…" aria-label="Your answer">` +
+    `<button class="mc-btn" id="qCheck">Check ✔</button></div><div class="accents">${ACCENTS.map(a => `<button class="mc-btn small acc" data-acc="${a}">${a}</button>`).join('')}</div>`;
+  h += `<div class="feed" id="qFeed"></div><div class="q-done" id="qDoneRow"><button class="mc-btn big" id="qDone">Take ${esc(it[0])} ▶</button></div>`;
+  $('qPanel').innerHTML = h;
+}
+function showTable() {
+  const q = cur.q, t = $('qTable');
+  if (t.classList.contains('show')) { t.classList.remove('show'); return; }
+  if (!cur.answered && !cur.peeked) { cur.peeked = true; }
+  const rows = verbTable(q.v, q.tense);
+  let note = '';
+  if (q.tense === 'pc' && q.v.inf === 'aller') note = 'aller takes être (VAN TRAMP). The participle agrees: + e for a girl, + s for plural.';
+  else if (q.tense === 'pc') note = `avoir + past participle. -er → é, -ir → i, -re → u.${PP[q.v.inf] ? ` ${q.v.inf} → ${PP[q.v.inf]}.` : ''}`;
+  else if (q.tense === 'fut') note = 'aller (present) + the infinitive.';
+  else if (q.v.grp !== 'irr') note = `${q.v.grp} verbs: take off -${q.v.grp} and add ${END[q.v.grp].filter((e, i) => [0, 1, 2, 5, 6, 7].includes(i)).map(e => '-' + (e || '(nothing)')).join(', ')}.`;
+  t.innerHTML = `<strong>${esc(q.v.inf)} · ${TENSE_NAME[q.tense]}</strong><table><tr><th>French</th><th>English</th></tr>` +
+    rows.map(r => `<tr><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join('') + `</table><div class="note">${esc(note)}${cur.answered ? '' : '<br>Peeking is allowed, but this one will not count as “right first time”.'}</div>`;
+  t.classList.add('show');
+}
+// Why a wrong answer is wrong, in a sentence a pupil can use
+function diagnose(q, text) {
+  const t = norm(text), v = q.v, i = q.i, right = norm(q.answer);
+  if (q.type === 'fr2en') {
+    for (const o of ['pres', 'pc', 'fut']) if (o !== q.tense && norm(english(v, o, i)) === t) return `That would be ${TENSE_NAME[o]}. This is ${TENSE_NAME[q.tense]}.`;
+    return `Look at the subject: <em>${esc(PERSONS[i].fr)}</em> means “${esc(PERSONS[i].en)}”.`;
+  }
+  for (const o of ['pres', 'pc', 'fut']) if (o !== q.tense && norm(conj(v, o, i, q.g)) === t) return `That is ${TENSE_NAME[o]}. We need ${TENSE_NAME[q.tense]}.`;
+  const subj = t.startsWith("j'") ? 'je' : t.split(' ')[0];
+  if (subj !== PERSONS[i].fr) { const p = PERSONS.find(p => p.fr === subj); return `Look at the subject. We need <em>${esc(PERSONS[i].fr)}</em> (${esc(PERSONS[i].en)})${p ? `, not ${esc(p.fr)} (${esc(p.en)})` : ''}.`; }
+  if (right.startsWith("j'") && t.startsWith('je ') && strip(t.slice(3)) === strip(right.slice(2))) return 'Je + a vowel becomes <em>j’</em>: j’ai, j’aime, j’écoute.';
+  const words = t.replace("j'", 'je ').split(' ');
+  if (q.tense === 'pc') {
+    const aux = words[1] || '';
+    const etre = IRR_PRES.être.includes(aux), avoir = IRR_PRES.avoir.includes(aux);
+    if (v.inf === 'aller' && avoir) return 'aller is a VAN TRAMP verb: it takes <em>être</em>, not avoir. (je suis allé)';
+    if (v.inf !== 'aller' && etre) return `${esc(v.inf)} takes <em>avoir</em> in the passé composé. Only VAN TRAMP verbs like aller take être.`;
+    if (words[2] === v.inf) return `You need the past participle, not the infinitive: ${esc(v.inf)} → <em>${esc(pastPart(v))}</em>.`;
+    if (v.inf === 'aller' && words[2] && words[2].startsWith('all')) return 'With être, the participle agrees with the subject: + e for a girl, + s for more than one.';
+    if (aux !== IRR_PRES[v.inf === 'aller' ? 'être' : 'avoir'][i]) return `Check the helper verb for <em>${esc(PERSONS[i].fr)}</em>: ${esc(conj(verb(v.inf === 'aller' ? 'être' : 'avoir'), 'pres', i, 'm'))}.`;
+    return `Check the past participle: -er → é, -ir → i, -re → u.`;
+  }
+  if (q.tense === 'fut') {
+    if (words[2] !== v.inf) return `Futur proche = aller + the <em>infinitive</em>. Keep ${esc(v.inf)} as it is.`;
+    return `Check the part of aller for <em>${esc(PERSONS[i].fr)}</em>: ${esc(conj(verb('aller'), 'pres', i, 'm'))}…`;
+  }
+  if (words[1] === v.inf) return `You need to change the infinitive to match <em>${esc(PERSONS[i].fr)}</em>.`;
+  if (v.grp === 'irr') return `${esc(v.inf)} is irregular, so it has to be learnt by heart. Try the verb table if you are stuck.`;
+  const e = END[v.grp][i];
+  return `Check the ending. -${v.grp} verbs with <em>${esc(PERSONS[i].fr)}</em> end in <em>${e ? '-' + e : 'nothing at all'}</em>.`;
+}
+function feedback(ok, html) { const b = $('qFeed'); b.className = 'feed show ' + (ok ? 'ok' : 'no'); b.innerHTML = html; }
+function markDot(a, ok) { const d = $('qd' + a); if (d) d.classList.add(ok ? 'ok' : 'no'); }
+function triesLeft() { const n = maxAttempts(cur.q) - cur.attempts; return n === 1 ? 'One more try.' : n + ' tries left.'; }
+function solvedLine(q) { return `<em>${esc(q.answer)}</em> = ${esc(q.en)}`; }
+function finishQ(ok) {
+  cur.answered = true;
+  const first = ok && cur.attempts === 1 && !cur.peeked;
+  game.results[cur.idx] = { q: cur.q, ok, first, peeked: cur.peeked };
+  if (first) game.score++;
+  if (ok) { sfx.right(); feedback(true, `<b>${pick(RIGHT)}</b> ${solvedLine(cur.q)}` + (cur.peeked && cur.attempts === 1 ? ' (with a little help from the verb table)' : '')); }
+  else { sfx.ohlala(); feedback(false, `<b>${pick(GIVEUP)}</b> The answer is ${solvedLine(cur.q)}.`); }
+  document.querySelectorAll('[data-opt],[data-acc],#qCheck').forEach(b => b.disabled = true);
+  const inp = $('qInput'); if (inp) inp.disabled = true;
+  $('qDoneRow').classList.add('show');
+  setTimeout(() => { const b = $('qDone'); if (b) b.focus({ preventScroll: true }); }, 50);
+  updateHud();
+}
+function chooseOpt(i) {
+  if (cur.answered) return;
+  const o = cur.q.opts[i], btn = document.querySelector(`[data-opt="${i}"]`);
+  if (!o || !btn || btn.disabled) return;
+  cur.attempts++;
+  if (o.ok) { btn.classList.add('ok'); markDot(cur.attempts - 1, true); return finishQ(true); }
+  btn.classList.add('no'); btn.disabled = true; markDot(cur.attempts - 1, false);
+  if (cur.attempts >= maxAttempts(cur.q)) {
+    const ri = cur.q.opts.findIndex(o => o.ok); document.querySelector(`[data-opt="${ri}"]`).classList.add('ok');
+    return finishQ(false);
+  }
+  sfx.wrong(); feedback(false, `<b>${pick(WRONG)}</b> ${diagnose(cur.q, o.text)} ${triesLeft()}`);
+}
+function checkTypedAnswer() {
+  if (cur.answered) return;
+  const inp = $('qInput'), val = inp.value;
+  const r = checkTyped(cur.q, val);
+  if (r === null) { inp.focus(); return; }
+  cur.attempts++;
+  if (r === 'ok') { markDot(cur.attempts - 1, true); return finishQ(true); }
+  markDot(cur.attempts - 1, false);
+  if (cur.attempts >= maxAttempts(cur.q)) return finishQ(false);
+  sfx.wrong();
+  if (r === 'accents') feedback(false, `<b>Presque!</b> Almost! The letters are right but an accent is missing or wrong. Use the buttons below. ${triesLeft()}`);
+  else feedback(false, `<b>${pick(WRONG)}</b> ${diagnose(cur.q, /^(je|j'|tu|il|elle|on|nous|vous|ils|elles)\b/i.test(norm(val)) ? val : phrase(cur.q.i, val))} ${triesLeft()}`);
+  inp.select(); inp.focus();
+}
+function insertAccent(a) {
+  const inp = $('qInput'); if (!inp || inp.disabled) return;
+  const s = inp.selectionStart ?? inp.value.length, e = inp.selectionEnd ?? s;
+  inp.value = inp.value.slice(0, s) + a + inp.value.slice(e);
+  inp.focus(); inp.setSelectionRange(s + 1, s + 1);
+}
+function closeQuestion() {
+  if (!cur || !cur.answered) return;
+  const L = cur.L; cur = null;
+  sfx.click();
+  enterPlay();
+  unlock(L);
+}
+
+// ════════════════════════════════════════════════════════════════
+// THE VERDICT
+// ════════════════════════════════════════════════════════════════
+const VERDICTS = [
+  { min: 27, stars: 3, h: 'Trois étoiles!', quote: '“Magnifique. Sublime. I wept into my éclair. Three stars, and the chef may kiss my hand.”' },
+  { min: 20, stars: 2, h: 'Deux étoiles!', quote: '“Très bien. The cassoulet sang to me. A little more practice with the verbs and this kitchen will be perfect.”' },
+  { min: 12, stars: 1, h: 'Une étoile.', quote: '“Not bad. The salad was a salad. The éclairs were… éclairs. One star. I shall return.”' },
+  { min: 0, stars: 0, h: 'Zéro étoile…', quote: '“Mon Dieu. I found a snail in my cassoulet, and the snail looked embarrassed. Revise your verbs, then cook for me again.”' },
+];
+function winGame() {
+  mode = 'win';
+  if (document.pointerLockElement) document.exitPointerLock();
+  sfx.win();
+  const s = game.score, V = VERDICTS.find(v => s >= v.min);
+  $('winH').textContent = V.h;
+  $('winStars').innerHTML = [0, 1, 2].map(i => `<span class="star${i < V.stars ? ' on' : ''}">★</span>`).join('');
+  $('winSub').textContent = V.quote;
+  const mins = Math.max(1, Math.round((performance.now() - game.t0) / 60000));
+  $('winScore').innerHTML = `${s} / 30<small>verbs right first time · dinner served in ${mins} minute${mins === 1 ? '' : 's'}</small>`;
+  const res = game.results.filter(Boolean);
+  const miss = res.filter(r => !r.first);
+  const groups = new Map();
+  miss.forEach(r => { const k = r.q.v.inf + '|' + r.q.tense; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); });
+  let h = '';
+  if (miss.length) {
+    h += `<h3>À réviser: things to practise</h3><ul>` + [...groups.values()].sort((a, b) => b.length - a.length).map(g => {
+      const q = g[0].q;
+      return `<li><b>${esc(q.v.inf)}</b> in ${TENSE_NAME[q.tense]}: ${g.map(r => `<em>${esc(r.q.answer)}</em>`).join(', ')}</li>`;
+    }).join('') + `</ul>`;
+  } else h += `<h3>Parfait!</h3><p class="fact">Every single verb right first time. Chef Gaston is crying into his moustache.</p>`;
+  h += `<h3 style="margin-top:18px">Toutes les réponses: all the answers</h3><table class="rev">` + game.results.map((r, i) => {
+    if (!r) return '';
+    const m = r.first ? '<td class="m ok">✔</td>' : r.ok ? '<td class="m half">½</td>' : '<td class="m no">✘</td>';
+    return `<tr><td class="n">${i + 1}</td><td><div class="q">${esc(r.q.answer)}</div><div class="a">${esc(r.q.en)} · ${esc(r.q.v.inf)}, ${TENSE_FR[r.q.tense]}${r.peeked ? ' · used the verb table' : ''}</div></td>${m}</tr>`;
+  }).join('') + `</table><p class="a" style="margin-top:10px">✔ right first time · ½ right on a later try or with the verb table · ✘ not this time</p>`;
+  $('winBody').innerHTML = h;
+  show('sWin'); $('sWin').scrollTop = 0;
+}
+
+// ════════════════════════════════════════════════════════════════
+// SETUP SCREEN
+// ════════════════════════════════════════════════════════════════
+const PRESETS = [
+  ['Tout! (everything)', () => [VERBS.map(v => v.inf), ['pres', 'pc', 'fut']]],
+  ['Regular -er only', () => [VERBS.filter(v => v.grp === 'er').map(v => v.inf), null]],
+  ['-er, -ir and -re', () => [VERBS.filter(v => v.grp !== 'irr').map(v => v.inf), null]],
+  ['avoir, être, aller', () => [['avoir', 'être', 'aller'], null]],
+];
+function buildSetup() {
+  const sv = store.get('verbs', null), st = store.get('tenses', null), sq = store.get('types', null);
+  if (Array.isArray(sv) && sv.length) pickedVerbs = new Set(sv.filter(k => verb(k)));
+  if (Array.isArray(st) && st.length) pickedTenses = new Set(st);
+  if (Array.isArray(sq) && sq.length) pickedTypes = new Set(sq);
+  $('presets').innerHTML = PRESETS.map((p, i) => `<button class="mc-btn small" data-preset="${i}">${esc(p[0])}</button>`).join('');
+  $('ticks').innerHTML = VGROUPS.map(g => `<div class="lvhead">${esc(g.name)}</div>` + VERBS.filter(v => v.grp === g.k).map(v =>
+    `<label class="tick"><input type="checkbox" data-verb="${esc(v.inf)}"><span class="box"></span><span>${esc(v.inf)}<span class="ch">to ${esc(v.en[0])}</span></span></label>`).join('')).join('');
+  $('tenses').innerHTML = TENSES.map(t => `<label class="tick"><input type="checkbox" data-tense="${t.k}"><span class="box"></span><span>${esc(t.name)}<span class="ch">${esc({ pres: 'je donne · I give', pc: 'j’ai donné · I gave · je suis allé(e)', fut: 'je vais donner · I am going to give' }[t.k])}</span></span></label>`).join('');
+  $('qtypes').innerHTML = [['mc', 'Multiple choice', 'choose the right form, French to English, English to French'], ['typed', 'Type the answer', 'with buttons for é è ê à ç …']].map(([k, n, d]) =>
+    `<label class="tick"><input type="checkbox" data-qtype="${k}"><span class="box"></span><span>${n}<span class="ch">${d}</span></span></label>`).join('');
+  syncSetup();
+}
+function syncSetup() {
+  document.querySelectorAll('[data-verb]').forEach(i => i.checked = pickedVerbs.has(i.dataset.verb));
+  document.querySelectorAll('[data-tense]').forEach(i => i.checked = pickedTenses.has(i.dataset.tense));
+  document.querySelectorAll('[data-qtype]').forEach(i => i.checked = pickedTypes.has(i.dataset.qtype));
+  store.set('verbs', [...pickedVerbs]); store.set('tenses', [...pickedTenses]); store.set('types', [...pickedTypes]);
+  const st = $('setupStatus'), btn = $('startBtn');
+  const warn = m => { st.textContent = m; st.className = 'status warn'; btn.disabled = true; };
+  if (!pickedVerbs.size) return warn('Tick at least one verb. Even Chef Gaston knows at least one verb.');
+  if (!pickedTenses.size) return warn('Tick at least one tense.');
+  if (!pickedTypes.size) return warn('Tick at least one question type.');
+  let n = 0;
+  for (const v of pickedVerbs) for (const t of pickedTenses) n += v === 'aller' && t === 'pc' ? 8 : 9;
+  st.textContent = `${pickedVerbs.size} verb${pickedVerbs.size === 1 ? '' : 's'} × ${pickedTenses.size} tense${pickedTenses.size === 1 ? '' : 's'}: ${n} different forms to practise.` +
+    (n < 30 ? ' The game asks 30 questions, so some forms will come up more than once.' : '');
+  st.className = 'status'; btn.disabled = false;
+}
+document.addEventListener('change', e => {
+  const t = e.target;
+  const tog = (set, k) => { t.checked ? set.add(k) : set.delete(k); syncSetup(); };
+  if (t.dataset.verb) tog(pickedVerbs, t.dataset.verb);
+  else if (t.dataset.tense) tog(pickedTenses, t.dataset.tense);
+  else if (t.dataset.qtype) tog(pickedTypes, t.dataset.qtype);
+});
+
+// ════════════════════════════════════════════════════════════════
+// INPUT
+// ════════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (mode === 'note') {
+    if (['Enter', 'Escape', 'KeyE', 'Space'].includes(e.code)) { e.preventDefault(); closeNote(); }
+    return;
+  }
+  if (mode === 'question') {
+    if (!cur) return;
+    const typing = document.activeElement && document.activeElement.id === 'qInput';
+    if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); if (cur.answered) closeQuestion(); else if (typing) checkTypedAnswer(); return; }
+    if (!typing && /^Digit[1-4]$/.test(e.code) && !cur.answered && cur.q.opts) { chooseOpt(+e.code[5] - 1); e.preventDefault(); }
+    return;
+  }
+  if (mode !== 'play') return;
+  keys[e.code] = true;
+  if (e.code === 'KeyE' || e.code === 'KeyF') interact();
+  if (e.code === 'Escape' && !document.pointerLockElement) pauseGame();
+  if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
+});
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; if (mode === 'play' && !isTouch) pauseGame(); });
+
+let dragging = false, dragX = 0, dragY = 0;
+canvas.addEventListener('mousedown', e => {
+  if (mode !== 'play') return;
+  if (isTouch) setTouch(false);
+  if (document.pointerLockElement === canvas) { if (e.button === 0) interact(); return; }
+  // No pointer lock (e.g. embedded preview): drag to look, click to use
+  dragging = true; dragX = e.clientX; dragY = e.clientY;
+  try { const r = canvas.requestPointerLock && canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (err) {}
+});
+window.addEventListener('mouseup', e => {
+  if (dragging && mode === 'play' && !document.pointerLockElement && Math.hypot(e.clientX - dragX, e.clientY - dragY) < 4) interact();
+  dragging = false;
+});
+document.addEventListener('mousemove', e => {
+  if (mode !== 'play') return;
+  if (document.pointerLockElement === canvas) look(e.movementX, e.movementY, 0.0022);
+  else if (dragging) { look(e.clientX - dragX, e.clientY - dragY, 0.005); dragX = e.clientX; dragY = e.clientY; }
+});
+function look(dx, dy, s) { P.yaw += dx * s; P.pitch = Math.max(-1.55, Math.min(1.55, P.pitch - dy * s)); }
+document.addEventListener('pointerlockchange', () => {
+  if (document.pointerLockElement !== canvas && mode === 'play') pauseGame();
+});
+
+// Touch: joystick on the left, drag anywhere else to look
+function joyMove(t) {
+  const r = $('joy').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  let dx = t.clientX - cx, dy = t.clientY - cy; const m = Math.hypot(dx, dy), max = r.width / 2 - 10;
+  if (m > max) { dx *= max / m; dy *= max / m; }
+  touch.jx = dx / max; touch.jy = dy / max;
+  $('joyKnob').style.transform = `translate(${dx}px,${dy}px)`;
+}
+$('joy').addEventListener('touchstart', e => { e.preventDefault(); const t = e.changedTouches[0]; touch.jid = t.identifier; touch.on = true; joyMove(t); }, { passive: false });
+canvas.addEventListener('touchstart', e => { e.preventDefault(); if (mode !== 'play') return; const t = e.changedTouches[0]; touch.lid = t.identifier; touch.lx = t.clientX; touch.ly = t.clientY; touch.on = true; }, { passive: false });
+document.addEventListener('touchmove', e => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === touch.jid) joyMove(t);
+    else if (t.identifier === touch.lid && mode === 'play') { look(t.clientX - touch.lx, t.clientY - touch.ly, 0.006); touch.lx = t.clientX; touch.ly = t.clientY; }
+  }
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  for (const t of e.changedTouches) {
+    if (t.identifier === touch.jid) { touch.jid = null; touch.jx = touch.jy = 0; $('joyKnob').style.transform = ''; }
+    if (t.identifier === touch.lid) touch.lid = null;
+  }
+});
+$('tUse').addEventListener('touchstart', e => { e.preventDefault(); interact(); }, { passive: false });
+$('tJump').addEventListener('touchstart', e => { e.preventDefault(); touch.jump = true; }, { passive: false });
+$('tJump').addEventListener('touchend', () => { touch.jump = false; });
+$('tPause').addEventListener('click', () => pauseGame());
+document.addEventListener('click', e => {
+  const t = e.target;
+  const pr = t.closest('[data-preset]');
+  if (pr && mode === 'title') { const [vs, ts] = PRESETS[+pr.dataset.preset][1](); pickedVerbs = new Set(vs); if (ts) pickedTenses = new Set(ts); sfx.click(); syncSetup(); return; }
+  if (t.closest('#startBtn') && mode === 'title') { initAudio(); sfx.click(); newGame(); return; }
+  if (t.closest('#beginBtn')) {
+    initAudio(); sfx.click(); game.t0 = performance.now(); enterPlay();
+    setTimeout(() => { roomSplash(0); game.visited.add(0); }, 300);
+    setTimeout(() => toast('Look for <span class="gold">golden sparkles</span>. Each one is a locked store with an ingredient inside.', 4200), 4700);
+    return;
+  }
+  if (t.closest('#resumeBtn')) { sfx.click(); enterPlay(); return; }
+  if (t.closest('#quitBtn') || t.closest('#changeBtn')) { sfx.click(); toTitle(); return; }
+  if (t.closest('#againBtn')) { sfx.click(); newGame(); return; }
+  if (mode === 'note' && t.closest('#noteClose')) { closeNote(); return; }
+  if (mode !== 'question' || !cur) return;
+  if (t.closest('#qHelp')) { showTable(); sfx.click(); return; }
+  if (t.closest('#qDone')) { closeQuestion(); return; }
+  const acc = t.closest('[data-acc]'); if (acc) { insertAccent(acc.dataset.acc); return; }
+  if (t.closest('#qCheck')) { checkTypedAnswer(); return; }
+  const opt = t.closest('[data-opt]'); if (opt) { chooseOpt(+opt.dataset.opt); return; }
+});
+// Keep the text box focused when an accent button is pressed
+document.addEventListener('mousedown', e => { if (e.target.closest && e.target.closest('[data-acc]')) e.preventDefault(); });
+function toTitle() {
+  mode = 'title'; game = null; cur = null;
+  generateWorld(); buildAll(); spawnNpcs();
+  $('splashTxt').textContent = pick(SPLASHES);
+  show('sTitle');
+}
+
+// ════════════════════════════════════════════════════════════════
+// MAIN LOOP
+// ════════════════════════════════════════════════════════════════
+let last = performance.now(), titleT = 0, dpr = 1;
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+  canvas.width = Math.floor(innerWidth * dpr); canvas.height = Math.floor(innerHeight * dpr);
+}
+window.addEventListener('resize', resize);
+
+function updateWorldFx(dt, room) {
+  // Flames flicker on the stoves, and the cooked dishes steam
+  steamT -= dt;
+  if (steamT < 0) {
+    steamT = 0.08;
+    const x0 = RX[room];
+    if (room < 3) {
+      [[x0 + 3, Z1 - 1], [x0 + 26, Z1 - 1]].forEach(([x, z]) => spawn(x + .3 + Math.random() * .4, G + 1.4, z + .3 + Math.random() * .4, 0, 0.8, 0, 0.6, [1, 0.6 + Math.random() * 0.3, 0.1, 1], 0.06, -0.5));
+      if (Math.random() < 0.5) spawn(x0 + 3.5, G + 1.8, Z1 - 0.5, (Math.random() - .5) * .3, 0.7, (Math.random() - .5) * .3, 2.2, [0.85, 0.85, 0.85, 0.5], 0.25, -0.1);
+    }
+    if (game) for (let r = 0; r < 3; r++) if (game.cooked[r] && Math.random() < 0.6)
+      spawn(RX[r + 1] - 2.5 + (Math.random() - .5) * .4, G + 2.2, 44.5, (Math.random() - .5) * .2, 0.5, 0, 1.6, [1, 1, 1, 0.55], 0.16, -0.05);
+  }
+  if (mode === 'title' || !game) return;
+  // Sparkles on the stores still locked in this kitchen, the ready station and the critic
+  sparkT -= dt;
+  if (sparkT < 0) {
+    sparkT = 0.12;
+    const gold = () => [1, 0.85 + Math.random() * 0.15, 0.3, 1];
+    LOCKS.forEach(L => {
+      if (L.done || L.room !== room || Math.random() < 0.5) return;
+      const s = Math.floor(Math.random() * 3), o = [Math.random(), Math.random(), Math.random()]; o[s] = Math.random() < 0.5 ? -0.05 : 1.05;
+      spawn(L.x + o[0], L.y + o[1], L.z + o[2], 0, 0.5, 0, 0.9, gold(), 0.07, 0);
+    });
+    if (room < 3 && game.got[room] >= 10 && !game.cooked[room]) { const S = STATIONS[room]; for (let i = 0; i < 3; i++) spawn(S.x + Math.random(), S.y + 1 + Math.random() * .5, S.z + Math.random(), 0, 0.6, 0, 1, gold(), 0.09, 0); }
+    if (room === 3 && game.cooked.every(Boolean) && !game.served) spawn(critic.x + (Math.random() - .5) * .6, critic.y + 1.9 + Math.random() * .3, critic.z + (Math.random() - .5) * .6, 0, 0.4, 0, 0.9, gold(), 0.07, 0);
+  }
+}
+
+const WARM = [0.16, 0.12, 0.1];
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!gl) return;
+  if (canvas.width !== Math.floor(innerWidth * dpr)) resize();
+  let room = game ? roomAt(P.x) : 0;
+  if (mode === 'play') {
+    updatePlayer(dt);
+    room = roomAt(P.x);
+    if (!game.visited.has(room)) { game.visited.add(room); roomSplash(room); }
+    updateTarget();
+    updateHud();
+  }
+  if (mode !== 'pause' && mode !== 'win') for (const n of npcs) npcStep(n, dt);
+  updateWorldFx(dt, room);
+  let nb = 0; for (const ci of dirty) { dirty.delete(ci); buildChunk(ci); if (++nb >= 6) break; }
+
+  let eye, ctr;
+  if (mode === 'title' || !game) {
+    titleT += dt * 0.08;
+    eye = [19 + Math.sin(titleT) * 9, G + 4.6, 48 + Math.cos(titleT) * 9];
+    ctr = [19, G + 1.2, 48];
+  } else {
+    shake = Math.max(0, shake - dt * 0.2);
+    const sx = (Math.random() - .5) * shake, sy = (Math.random() - .5) * shake;
+    const d = lookDir();
+    eye = [P.x + sx, P.y + EYE + sy, P.z];
+    ctr = [eye[0] + d[0], eye[1] + d[1], eye[2] + d[2]];
+  }
+  const sky = WARM, fog = [26, 70];
+  const fov = 1.25, aspect = canvas.width / canvas.height;
+  const mvp = mmul(persp(fov, aspect, 0.05, 200), lookAt(eye, ctr));
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.clearColor(sky[0], sky[1], sky[2], 1);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST); gl.disable(gl.CULL_FACE);
+  const bp = blockProg;
+  gl.useProgram(bp.p);
+  gl.uniformMatrix4fv(bp.u.uMVP, false, mvp);
+  gl.uniform3fv(bp.u.uEye, eye); gl.uniform2fv(bp.u.uFog, fog); gl.uniform3fv(bp.u.uFogCol, sky);
+  gl.uniform1f(bp.u.uLight, 1);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, atlasTex); gl.uniform1i(bp.u.uTex, 0);
+  gl.enableVertexAttribArray(bp.a.aPos); gl.enableVertexAttribArray(bp.a.aUV); gl.enableVertexAttribArray(bp.a.aCol);
+  const bindBlock = buf => {
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.vertexAttribPointer(bp.a.aPos, 3, gl.FLOAT, false, 32, 0);
+    gl.vertexAttribPointer(bp.a.aUV, 2, gl.FLOAT, false, 32, 12);
+    gl.vertexAttribPointer(bp.a.aCol, 3, gl.FLOAT, false, 32, 20);
+  };
+  gl.disable(gl.BLEND); gl.depthMask(true); gl.uniform1f(bp.u.uAlpha, 1);
+  for (const c of chunks) if (c && c.n) { bindBlock(c.vbo); gl.drawArrays(gl.TRIANGLES, 0, c.n); }
+  const nn = drawNpcs(eye);
+  if (nn) { gl.bindBuffer(gl.ARRAY_BUFFER, npcBuf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(nv), gl.DYNAMIC_DRAW); bindBlock(npcBuf); gl.drawArrays(gl.TRIANGLES, 0, nn); }
+  gl.disableVertexAttribArray(bp.a.aUV); gl.disableVertexAttribArray(bp.a.aCol);
+
+  let np = 0;
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i];
+    p.life -= dt; p.vy -= p.grav * dt;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+    if (p.life <= 0) { parts.splice(i, 1); continue; }
+  }
+  for (const p of parts) {
+    const o = np * 8, fade = Math.min(1, p.life / (p.max * 0.3));
+    pData[o] = p.x; pData[o + 1] = p.y; pData[o + 2] = p.z; pData[o + 3] = p.r; pData[o + 4] = p.g; pData[o + 5] = p.b; pData[o + 6] = p.a * fade; pData[o + 7] = p.size; np++;
+  }
+  const pp = pointProg;
+  gl.useProgram(pp.p);
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.uniformMatrix4fv(pp.u.uMVP, false, mvp);
+  gl.uniform1f(pp.u.uScale, canvas.height / (2 * Math.tan(fov / 2)));
+  gl.uniform3fv(pp.u.uEye, eye); gl.uniform2fv(pp.u.uFog, fog); gl.uniform3fv(pp.u.uFogCol, sky);
+  gl.enableVertexAttribArray(pp.a.aPos); gl.enableVertexAttribArray(pp.a.aCol); gl.enableVertexAttribArray(pp.a.aSize);
+  if (np) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, pBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, pData.subarray(0, np * 8), gl.DYNAMIC_DRAW);
+    gl.vertexAttribPointer(pp.a.aPos, 3, gl.FLOAT, false, 32, 0);
+    gl.vertexAttribPointer(pp.a.aCol, 4, gl.FLOAT, false, 32, 12);
+    gl.vertexAttribPointer(pp.a.aSize, 1, gl.FLOAT, false, 32, 28);
+    gl.drawArrays(gl.POINTS, 0, np);
+  }
+  if (mode === 'play' && target && !target.npc) {
+    const { x, y, z } = target, a = -0.002, b = 1.002, L = [];
+    const c = [[a, a, a], [b, a, a], [b, a, b], [a, a, b], [a, b, a], [b, b, a], [b, b, b], [a, b, b]];
+    [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]].forEach(([i, j]) => {
+      L.push(x + c[i][0], y + c[i][1], z + c[i][2], 0, 0, 0, 0.7, 1, x + c[j][0], y + c[j][1], z + c[j][2], 0, 0, 0, 0.7, 1);
+    });
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(L), gl.DYNAMIC_DRAW);
+    gl.vertexAttribPointer(pp.a.aPos, 3, gl.FLOAT, false, 32, 0);
+    gl.vertexAttribPointer(pp.a.aCol, 4, gl.FLOAT, false, 32, 12);
+    gl.vertexAttribPointer(pp.a.aSize, 1, gl.FLOAT, false, 32, 28);
+    gl.drawArrays(gl.LINES, 0, 24);
+  }
+  gl.disableVertexAttribArray(pp.a.aCol); gl.disableVertexAttribArray(pp.a.aSize);
+  gl.disable(gl.BLEND);
+  updateSay(mvp, eye, dt);
+}
+
+// ── Boot ──
+buildSetup();
+$('splashTxt').textContent = pick(SPLASHES);
+if (gl) {
+  resize();
+  generateWorld(); buildAll(); spawnNpcs();
+  requestAnimationFrame(frame);
+}
+
+</script>
+</body>
+</html>
