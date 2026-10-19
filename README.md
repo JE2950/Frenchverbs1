@@ -21,3 +21,7 @@ Food critic Madame Lagrange is coming to dinner, and Chef Gaston has locked ever
 The verbs, endings and translations follow the French department's verb sheets.
 
 Controls: WASD to walk, the mouse to look, E or a click to use, Esc to pause. On a tablet, use the on-screen stick and the USE button.
+
+## Quick practice: Word Blaster
+
+The **Quick practice** button on the title screen opens a typing game. Escaped snails float down carrying an English verb and its tense (*we finish · présent*). Type the French and press Enter to throw a baguette at them before they reach the counter. It uses the verbs and tenses ticked on the title screen, has accent buttons, and gives fewer points when only an accent is wrong. Three hearts, faster waves, a best score per computer, and a list of verbs to practise at the end.
