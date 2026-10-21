@@ -88,6 +88,7 @@ kbd { display: inline-block; background: #8b8b8b; color: #222; border: 2px solid
 #roomName { font-size: 1.05rem; color: #ffe08a; text-shadow: 2px 2px 0 #000; }
 #roomGoal { font-size: .85rem; color: #ddd; margin-top: 3px; }
 #roomHint { font-size: .8rem; color: #ffe9a8; margin-top: 3px; }
+body.assessment-mode #roomName::after { content: ' · Assessment'; color: #ffe9a8; font-size: .8em; }
 .ach-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
 .ach { display: flex; gap: 8px; align-items: flex-start; font-size: .92rem; color: #e8e8e8; }
 .ach .ic { flex: 0 0 22px; height: 22px; display: grid; place-items: center; background: #3a3a3a; border: 2px solid #000; font-size: .8rem; }
@@ -277,6 +278,10 @@ body.touch #touch.on { display: block; }
     <h3>Question types</h3>
     <div class="ticks" id="qtypes"></div>
     <div class="status" id="setupStatus"></div>
+  </div>
+  <div class="panel">
+    <h3>Help</h3>
+    <div class="ticks"><label class="tick"><input type="checkbox" id="helpToggle"><span class="box"></span><span>Verb table button<span class="ch">untick for assessment mode</span></span></label></div>
   </div>
   <div class="start-row">
     <button class="mc-btn big" id="startBtn">Entrer dans la cuisine ▶</button><button class="mc-btn big" id="wbBtn">⚡ Quick practice: Word Blaster</button>
@@ -737,13 +742,15 @@ function subjectLabel(i, g, v, tense) {
   const boy = g === 'm';
   return { je: boy ? 'je (a boy)' : 'je (a girl)', tu: boy ? 'tu (a boy)' : 'tu (a girl)', nous: boy ? 'nous (boys)' : 'nous (girls)', vous: boy ? 'vous (a group of boys)' : 'vous (a group of girls)' }[p.k] || p.fr;
 }
+// One row per person: je, tu, il, elle, on, nous, vous, ils, elles
 function verbTable(v, tense) {
-  return [0, 2, 3, 5, 6, 7].map(i => {
-    let fr = conj(v, tense, i, 'm');
-    if (v.inf === 'aller' && tense === 'pc' && ['je', 'tu', 'nous', 'vous'].includes(PERSONS[i].k)) fr = fr.replace(/allé(s?)$/, 'allé(e)$1');
-    if (i === 2 && v.inf === 'aller' && tense === 'pc') fr = 'il est allé / elle est allée';
-    else if (i === 2) fr = fr + ' (il / elle / on)';
-    return [PERSONS[i].k === 'il' ? 'il / elle / on' : PERSONS[i].fr, fr.replace(/ \(il \/ elle \/ on\)$/, ''), english(v, tense, i).replace(/^he /, 'he / she / we ')];
+  return PERSONS.map((p, i) => {
+    let fr = conj(v, tense, i, p.k === 'elle' || p.k === 'elles' ? 'f' : 'm');
+    if (v.inf === 'aller' && tense === 'pc') {
+      if (['je', 'tu', 'nous', 'vous'].includes(p.k)) fr = fr.replace(/allé(s?)$/, 'allé(e)$1');
+      else if (p.k === 'on') fr = 'on est allé(e)(s)';
+    }
+    return [p.fr, fr, english(v, tense, i)];
   });
 }
 
@@ -759,6 +766,7 @@ function checkTyped(q, typed) {
 }
 
 // ── Building questions ──
+let helpEnabled = true;
 let pickedVerbs = new Set(VERBS.map(v => v.inf)), pickedTenses = new Set(TENSES.map(t => t.k)), pickedTypes = new Set(['mc', 'typed']);
 function wrongForms(v, tense, i, g) {
   const right = conj(v, tense, i, g), out = new Set();
@@ -1489,7 +1497,7 @@ function renderQuestion() {
   let h = `<div class="q-head"><span>${esc(c.name)} · ${esc(lockName(cur.L))}</span><span class="nm"><img class="q-ic" src="${ICONS[it[3]]}" alt=""> ${esc(it[0])} (${esc(it[1])})</span></div>`;
   h += `<div class="q-task">${esc(q.prompt)}</div>` + questionBody(q);
   h += `<div class="q-meta"><div class="dots">Tries: ${Array.from({ length: max }, (_, a) => `<span class="dot" id="qd${a}"></span>`).join('')}</div>` +
-    `<button class="mc-btn small" id="qHelp">📖 Show the verb table</button></div>`;
+    (helpEnabled ? `<button class="mc-btn small" id="qHelp">📖 Show the verb table</button>` : '') + `</div>`;
   h += `<div class="gtable" id="qTable"></div>`;
   if (q.opts) h += `<div class="choices">${q.opts.map((o, i) => `<button class="mc-btn choice${q.type === 'fr2en' ? '' : ' fr'}" data-opt="${i}"><span class="k">${i + 1}</span><span>${esc(o.text)}</span></button>`).join('')}</div>`;
   else h += `<div class="typed"><input id="qInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type the French here…" aria-label="Your answer">` +
@@ -1653,6 +1661,7 @@ function buildSetup() {
   if (Array.isArray(sv) && sv.length) pickedVerbs = new Set(sv.filter(k => verb(k)));
   if (Array.isArray(st) && st.length) pickedTenses = new Set(st);
   if (Array.isArray(sq) && sq.length) pickedTypes = new Set(sq);
+  helpEnabled = store.get('help', true) !== false;
   $('presets').innerHTML = PRESETS.map((p, i) => `<button class="mc-btn small" data-preset="${i}">${esc(p[0])}</button>`).join('');
   $('ticks').innerHTML = VGROUPS.map(g => `<div class="lvhead">${esc(g.name)}</div>` + VERBS.filter(v => v.grp === g.k).map(v =>
     `<label class="tick"><input type="checkbox" data-verb="${esc(v.inf)}"><span class="box"></span><span>${esc(v.inf)}<span class="ch">to ${esc(v.en[0])}</span></span></label>`).join('')).join('');
@@ -1666,6 +1675,8 @@ function syncSetup() {
   document.querySelectorAll('[data-tense]').forEach(i => i.checked = pickedTenses.has(i.dataset.tense));
   document.querySelectorAll('[data-qtype]').forEach(i => i.checked = pickedTypes.has(i.dataset.qtype));
   store.set('verbs', [...pickedVerbs]); store.set('tenses', [...pickedTenses]); store.set('types', [...pickedTypes]);
+  $('helpToggle').checked = helpEnabled; store.set('help', helpEnabled);
+  document.body.classList.toggle('assessment-mode', !helpEnabled);
   const st = $('setupStatus'), btn = $('startBtn');
   const warn = m => { st.textContent = m; st.className = 'status warn'; btn.disabled = true; };
   if (!pickedVerbs.size) return warn('Tick at least one verb. Even Chef Gaston knows at least one verb.');
@@ -1683,6 +1694,7 @@ document.addEventListener('change', e => {
   if (t.dataset.verb) tog(pickedVerbs, t.dataset.verb);
   else if (t.dataset.tense) tog(pickedTenses, t.dataset.tense);
   else if (t.dataset.qtype) tog(pickedTypes, t.dataset.qtype);
+  else if (t.id === 'helpToggle') { helpEnabled = t.checked; syncSetup(); }
 });
 
 // ════════════════════════════════════════════════════════════════
@@ -1774,7 +1786,7 @@ document.addEventListener('click', e => {
   if (t.closest('#againBtn')) { sfx.click(); newGame(); return; }
   if (mode === 'note' && t.closest('#noteClose')) { closeNote(); return; }
   if (mode !== 'question' || !cur) return;
-  if (t.closest('#qHelp')) { showTable(); sfx.click(); return; }
+  if (t.closest('#qHelp') && helpEnabled) { showTable(); sfx.click(); return; }
   if (t.closest('#qDone')) { closeQuestion(); return; }
   const acc = t.closest('[data-acc]'); if (acc) { insertAccent(acc.dataset.acc); return; }
   if (t.closest('#qCheck')) { checkTypedAnswer(); return; }
